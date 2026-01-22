@@ -1,15 +1,21 @@
-import { TypeOrmModuleOptions } from '@nestjs/typeorm';
-import { ConfigService } from '@nestjs/config';
+import { ConfigService } from "@nestjs/config";
+import { TypeOrmModuleOptions } from "@nestjs/typeorm";
 
-export const typeOrmConfig = (configService: ConfigService): TypeOrmModuleOptions => ({
+export const typeOrmConfig = (
+  configService: ConfigService,
+): TypeOrmModuleOptions => ({
   type: 'postgres',
   host: configService.get<string>('DB_HOST'),
-  port: configService.get<number>('DB_PORT'),
+  port: Number(configService.get('DB_PORT')),
   username: configService.get<string>('DB_USERNAME'),
   password: configService.get<string>('DB_PASSWORD'),
-  database: configService.get<string>('DB_DATABASE'), // <-- o nome beautyshine
+  database: configService.get<string>('DB_DATABASE'),
   schema: configService.get<string>('DB_SCHEMA') ?? 'public',
 
+  ssl: {
+    rejectUnauthorized: false,
+  },
+
   autoLoadEntities: true,
-  synchronize: true, // deixe true só em DEV
+  synchronize: true,
 });
