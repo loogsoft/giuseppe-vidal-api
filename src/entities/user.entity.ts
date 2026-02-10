@@ -1,6 +1,5 @@
 import { UserTypeEnum } from 'src/dtos/enums/user-type.enum';
 import { Entity, PrimaryGeneratedColumn, Column } from 'typeorm';
-
 @Entity('user')
 export class UserEntity {
   @PrimaryGeneratedColumn()
