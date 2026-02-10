@@ -14,15 +14,20 @@ import * as bcrypt from 'bcrypt';
 import { LoginRequestDto } from 'src/dtos/request/login-request.dto';
 import { LoginResponseDto } from 'src/dtos/response/login-response.dto';
 import { JwtService } from '@nestjs/jwt';
+import { EmailService } from './email.service';
+
 @Injectable()
 export class UserService {
-  // private readonly logger = new Logger(UserService.name);
-
   constructor(
     @InjectRepository(UserEntity)
     private repo: Repository<UserEntity>,
     private jwtService: JwtService,
+    private emailService: EmailService,
   ) {}
+
+  private generateCode(): string {
+    return Math.floor(100000 + Math.random() * 900000).toString();
+  }
 
   async create(dto: UserRequestDto): Promise<UserResponseDto> {
     const userExists = await this.repo.findOne({
@@ -101,7 +106,8 @@ export class UserService {
 
     return `Usuario ${user.name}`;
   }
-  async login(dto: LoginRequestDto): Promise<LoginResponseDto> {
+
+  async login(dto: LoginRequestDto) {
     const user = await this.repo.findOne({ where: { email: dto.email } });
 
     if (!user) {
@@ -109,9 +115,50 @@ export class UserService {
     }
 
     const passwordMatch = await bcrypt.compare(dto.password, user.password);
+
     if (!passwordMatch) {
       throw new UnauthorizedException('Email ou senha inválidos');
     }
+
+    const code = this.generateCode();
+
+    user.verificationCode = code;
+    user.codeExpiresAt = new Date(Date.now() + 5 * 60 * 1000);
+
+    await this.repo.save(user);
+
+    await this.emailService.sendVerificationCode(user.email, code);
+
+    return {
+      requiresVerification: true,
+      email: user.email,
+    };
+  }
+
+  async validateUser(email: string, code: string) {
+    const user = await this.repo.findOne({ where: { email } });
+
+    if (!user) {
+      throw new UnauthorizedException('Usuário não encontrado');
+    }
+
+    if (!user.verificationCode) {
+      throw new UnauthorizedException('Nenhum código gerado');
+    }
+
+    if (user.codeExpiresAt && user.codeExpiresAt < new Date()) {
+      throw new UnauthorizedException('Código expirado');
+    }
+
+    if (user.verificationCode !== code) {
+      throw new UnauthorizedException('Código inválido');
+    }
+
+    // Limpa código
+    user.verificationCode = null;
+    user.codeExpiresAt = null;
+
+    await this.repo.save(user);
 
     const payload = { sub: user.id, email: user.email };
 
@@ -119,7 +166,7 @@ export class UserService {
 
     return {
       token,
-      expiresIn: 60, // só informativo para o front
+      expiresIn: 60,
     };
   }
 }
