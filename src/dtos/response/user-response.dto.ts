@@ -10,9 +10,7 @@ export class UserResponseDto {
 
   @Expose()
   email: string;
-  
+
   @Expose()
   userType: UserTypeEnum;
-
-
 }

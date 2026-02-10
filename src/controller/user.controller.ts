@@ -16,6 +16,14 @@ import { LoginRequestDto } from 'src/dtos/request/login-request.dto';
 import { LoginResponseDto } from 'src/dtos/response/login-response.dto';
 import { JwtAuthGuard } from 'src/auth/jwt-auth.guard';
 import { VerifyCoderequestDto } from 'src/dtos/request/verification-code-request.dto';
+import type { Request as ExpressRequest } from 'express';
+
+type AuthenticatedRequest = ExpressRequest & {
+  user: {
+    id: string;
+    email: string;
+  };
+};
 
 @Controller('users')
 export class UsersController {
@@ -27,22 +35,22 @@ export class UsersController {
   }
 
   @Post('/login')
-  login(@Body() dto: LoginRequestDto) {
+  login(@Body() dto: LoginRequestDto): Promise<{ message: string }> {
     return this.usersService.login(dto);
   }
 
   @Post('verify-code')
-  verifyCode(@Body() dto: VerifyCoderequestDto) {
+  verifyCode(@Body() dto: VerifyCoderequestDto): Promise<LoginResponseDto> {
     return this.usersService.validateUser(dto.email, dto.code);
   }
   @UseGuards(JwtAuthGuard)
   @Get('me')
-  me(@Request() req) {
+  me(@Request() req: AuthenticatedRequest): AuthenticatedRequest['user'] {
     return req.user;
   }
 
   @Get()
-  findAll(): Promise<UserResponseDto> {
+  findAll(): Promise<UserResponseDto[]> {
     return this.usersService.findAll();
   }
 

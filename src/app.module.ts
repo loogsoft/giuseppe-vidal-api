@@ -21,7 +21,7 @@ import { EmailModule } from './modules/email.module';
 
     ProductsModule,
     UserModule,
-    EmailModule
+    EmailModule,
   ],
 })
 export class AppModule {}

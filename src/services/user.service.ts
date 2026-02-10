@@ -1,6 +1,5 @@
 import {
   Injectable,
-  Logger,
   NotFoundException,
   UnauthorizedException,
 } from '@nestjs/common';
@@ -54,8 +53,8 @@ export class UserService {
     });
   }
 
-  async findAll(): Promise<UserResponseDto> {
-    const users = this.repo.find();
+  async findAll(): Promise<UserResponseDto[]> {
+    const users = await this.repo.find();
     return plainToInstance(UserResponseDto, users);
   }
 
@@ -107,7 +106,7 @@ export class UserService {
     return `Usuario ${user.name}`;
   }
 
-  async login(dto: LoginRequestDto) {
+  async login(dto: LoginRequestDto): Promise<{ message: string }> {
     const user = await this.repo.findOne({
       where: { email: dto.email.toLowerCase() },
     });
@@ -134,7 +133,7 @@ export class UserService {
     return { message: 'Código de verificação enviado para o email' };
   }
 
-  async validateUser(email: string, code: string) {
+  async validateUser(email: string, code: string): Promise<LoginResponseDto> {
     const user = await this.repo.findOne({ where: { email } });
 
     if (!user) {

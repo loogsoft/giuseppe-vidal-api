@@ -16,7 +16,7 @@ import { EmailModule } from './email.module';
       secret: process.env.JWT_SECRET || 'jwt_secret_dev',
       signOptions: { expiresIn: '5h' },
     }),
-    EmailModule
+    EmailModule,
   ],
   controllers: [UsersController],
   providers: [UserService, JwtStrategy],
