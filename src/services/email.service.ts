@@ -7,7 +7,7 @@ export class EmailService {
 
   async sendVerificationCode(email: string, code: string) {
     await this.mailerService.sendMail({
-      to: 'andersonmendesdesouza2007@gmail.com',
+      to: 'loogsoftware@gmail.com',
       subject: 'Código de verificação - Sistema da Loja',
       html: `
   <div style="font-family: Arial, sans-serif; background-color: #f4f4f4; padding: 40px 0;">

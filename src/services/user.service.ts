@@ -108,7 +108,9 @@ export class UserService {
   }
 
   async login(dto: LoginRequestDto) {
-    const user = await this.repo.findOne({ where: { email: dto.email } });
+    const user = await this.repo.findOne({
+      where: { email: dto.email.toLowerCase() },
+    });
 
     if (!user) {
       throw new UnauthorizedException('Email ou senha inválidos');
