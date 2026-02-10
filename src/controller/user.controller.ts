@@ -7,6 +7,7 @@ import {
   Put,
   UseGuards,
   Request,
+  Delete,
 } from '@nestjs/common';
 import { UserService } from 'src/services/user.service';
 import { UserRequestDto } from 'src/dtos/request/user-request.dto';
@@ -26,14 +27,13 @@ export class UsersController {
   }
 
   @Post('/login')
-  login(@Body() dto: LoginRequestDto){
+  login(@Body() dto: LoginRequestDto) {
     return this.usersService.login(dto);
   }
 
   @Post('verify-code')
   verifyCode(@Body() dto: VerifyCoderequestDto) {
     return this.usersService.validateUser(dto.email, dto.code);
-
   }
   @UseGuards(JwtAuthGuard)
   @Get('me')
@@ -57,5 +57,10 @@ export class UsersController {
     @Body() dto: UserRequestDto,
   ): Promise<UserResponseDto> {
     return this.usersService.update(id, dto);
+  }
+
+  @Delete(':id')
+  remove(@Param('id') id: string) {
+    return this.usersService.remove(id);
   }
 }

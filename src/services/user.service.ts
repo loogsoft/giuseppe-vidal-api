@@ -107,7 +107,7 @@ export class UserService {
     return `Usuario ${user.name}`;
   }
 
-  async login(dto: LoginRequestDto): Promise<LoginResponseDto> {
+  async login(dto: LoginRequestDto) {
     const user = await this.repo.findOne({ where: { email: dto.email } });
 
     if (!user) {
@@ -129,10 +129,7 @@ export class UserService {
 
     await this.emailService.sendVerificationCode(user.email, code);
 
-    return {
-      token:" asdasdasda",
-      expiresIn: 60,
-    };
+    return { message: 'Código de verificação enviado para o email' };
   }
 
   async validateUser(email: string, code: string) {
@@ -154,7 +151,6 @@ export class UserService {
       throw new UnauthorizedException('Código inválido');
     }
 
-    // Limpa código
     user.verificationCode = null;
     user.codeExpiresAt = null;
 
