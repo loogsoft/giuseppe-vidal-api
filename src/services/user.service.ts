@@ -106,33 +106,52 @@ export class UserService {
     return `Usuario ${user.name}`;
   }
 
-  async login(dto: LoginRequestDto): Promise<{ message: string }> {
+  // async login(dto: LoginRequestDto): Promise<{ message: string }> {
+  //   const user = await this.repo.findOne({
+  //     where: { email: dto.email.toLowerCase() },
+  //   });
+
+  //   if (!user) {
+  //     throw new UnauthorizedException('Email ou senha inválidos');
+  //   }
+
+  //   const passwordMatch = await bcrypt.compare(dto.password, user.password);
+
+  //   if (!passwordMatch) {
+  //     throw new UnauthorizedException('Email ou senha inválidos');
+  //   }
+
+  //   const code = this.generateCode();
+
+  //   user.verificationCode = code;
+  //   user.codeExpiresAt = new Date(Date.now() + 5 * 60 * 1000);
+
+  //   await this.repo.save(user);
+
+  //   await this.emailService.sendVerificationCode(user.email, code);
+
+  //   return { message: 'Código de verificação enviado para o email' };
+  // }
+
+  async login(dto: LoginRequestDto) {
     const user = await this.repo.findOne({
       where: { email: dto.email.toLowerCase() },
     });
-
-    if (!user) {
-      throw new UnauthorizedException('Email ou senha inválidos');
-    }
+    if (!user) throw new UnauthorizedException('Email ou senha inválidos');
 
     const passwordMatch = await bcrypt.compare(dto.password, user.password);
-
-    if (!passwordMatch) {
+    if (!passwordMatch)
       throw new UnauthorizedException('Email ou senha inválidos');
-    }
 
-    const code = this.generateCode();
-
+    // Gera código, mas NÃO envia email ainda
+    const code = Math.floor(100000 + Math.random() * 900000).toString();
     user.verificationCode = code;
     user.codeExpiresAt = new Date(Date.now() + 5 * 60 * 1000);
-
     await this.repo.save(user);
 
-    await this.emailService.sendVerificationCode(user.email, code);
-
-    return { message: 'Código de verificação enviado para o email' };
+    return { message: 'Login ok, código gerado (sem envio de email)' };
   }
-
+  
   async validateUser(email: string, code: string): Promise<LoginResponseDto> {
     const user = await this.repo.findOne({ where: { email } });
 
