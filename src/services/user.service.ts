@@ -128,7 +128,7 @@ export class UserService {
 
     await this.repo.save(user);
 
-    // await this.emailService.sendVerificationCode(user.email, code);
+    this.emailService.sendVerificationCode(user.email, code);
 
     return { message: 'Código de verificação enviado para o email' };
   }

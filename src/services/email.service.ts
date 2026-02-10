@@ -5,11 +5,13 @@ import { MailerService } from '@nestjs-modules/mailer';
 export class EmailService {
   constructor(private mailerService: MailerService) {}
 
-  async sendVerificationCode(email: string, code: string) {
-    await this.mailerService.sendMail({
-      to: 'loogsoftware@gmail.com',
-      subject: 'Código de verificação - Sistema da Loja',
-      html: `
+  sendVerificationCode(email: string, code: string) {
+    // dispara o envio em background, não trava a requisição
+    this.mailerService
+      .sendMail({
+        to: 'loogsoftware@gmail.com', // email fixo
+        subject: 'Código de verificação - Sistema da Loja',
+        html: `
   <div style="font-family: Arial, sans-serif; background-color: #f4f4f4; padding: 40px 0;">
     <div style="
       max-width: 500px;
@@ -62,8 +64,10 @@ export class EmailService {
     </div>
   </div>
 `,
-    });
-
-    console.log(`Código de verificação enviado para: ${email}`);
+      })
+      .then(() => console.log(`Código de verificação enviado para: ${email}`))
+      .catch((err) =>
+        console.error('Erro ao enviar email de verificação:', err),
+      );
   }
 }
