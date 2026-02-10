@@ -14,10 +14,14 @@ export class UserEntity {
   @Column({ nullable: false })
   password: string;
 
-  @Column({ nullable: false })
+  @Column({
+    type: 'enum',
+    enum: UserTypeEnum,
+    default: UserTypeEnum.SELLER,
+  })
   userType: UserTypeEnum;
 
-  @Column({type: 'varchar', nullable: true })
+  @Column({ type: 'varchar', nullable: true })
   verificationCode: string | null;
 
   @Column({ type: 'timestamp', nullable: true })
