@@ -64,6 +64,6 @@ export class EmailService {
 `,
     });
 
-    console.log(`Código de verificação enviado para ${email}: ${code}`);
+    console.log(`Código de verificação enviado para: ${email}`);
   }
 }
