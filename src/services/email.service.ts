@@ -1,73 +1,37 @@
 import { Injectable } from '@nestjs/common';
-import { MailerService } from '@nestjs-modules/mailer';
+import { MailerSend, EmailParams, Sender, Recipient } from 'mailersend';
 
 @Injectable()
 export class EmailService {
-  constructor(private mailerService: MailerService) {}
+  private mailerSend: MailerSend;
 
-  sendVerificationCode(email: string, code: string) {
-    // dispara o envio em background, não trava a requisição
-    this.mailerService
-      .sendMail({
-        to: 'loogsoftware@gmail.com', // email fixo
-        subject: 'Código de verificação - Sistema da Loja',
-        html: `
-  <div style="font-family: Arial, sans-serif; background-color: #f4f4f4; padding: 40px 0;">
-    <div style="
-      max-width: 500px;
-      margin: auto;
-      background: #ffffff;
-      padding: 30px;
-      border-radius: 10px;
-      text-align: center;
-      box-shadow: 0 4px 10px rgba(0,0,0,0.08);
-    ">
-      
-      <h2 style="color: #8B4513; margin-bottom: 10px;">
-      Controle de gestão - Giuseppe Vidal 
-      </h2>
-      
-      <p style="color: #555; font-size: 16px;">
-        Use o código abaixo para confirmar sua conta:
-      </p>
+  constructor() {
+    this.mailerSend = new MailerSend({
+      apiKey: process.env.MAILERSEND_API_KEY || '',
+    });
+  }
 
-      <p style="color: #555; font-size: 12px;">
-        Acesso pedido por: ${email}
-      </p>
+  async sendVerificationCode(email: string, code: string) {
+    const sentFrom = new Sender(
+      'no-reply@test-r6ke4n1jvo3gon12.mlsender.net',
+      'Sistema da Loja',
+    );
 
-      <div style="
-        background: #f8f1e9;
-        padding: 20px;
-        margin: 25px 0;
-        border-radius: 8px;
-      ">
-        <span style="
-          font-size: 32px;
-          letter-spacing: 8px;
-          font-weight: bold;
-          color: #8B4513;
-        ">
-          ${code}
-        </span>
-      </div>
+    const recipients = [new Recipient('loogsoftware@gmail.com', 'Usuário')];
 
-      <p style="color: #777; font-size: 14px;">
-        Este código expira em 5 minutos.
-      </p>
+    const emailParams = new EmailParams()
+      .setFrom(sentFrom)
+      .setTo(recipients)
+      .setSubject('Código de verificação – Sistema da Loja').setHtml(`
+        <p>Seu código de verificação é:</p>
+        <h2>${code}</h2>
+      `);
 
-      <hr style="margin: 30px 0; border: none; border-top: 1px solid #eee;" />
-
-      <p style="font-size: 12px; color: #999;">
-        Se você não solicitou este código, ignore este email.
-      </p>
-
-    </div>
-  </div>
-`,
-      })
-      .then(() => console.log(`Código de verificação enviado para: ${email}`))
-      .catch((err) =>
-        console.error('Erro ao enviar email de verificação:', err),
-      );
+    try {
+      await this.mailerSend.email.send(emailParams);
+      console.log('✅ Email enviado com sucesso');
+    } catch (err) {
+      console.error('❌ Erro ao enviar email via MailerSend:', err);
+    }
   }
 }
