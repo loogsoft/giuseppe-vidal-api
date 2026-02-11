@@ -106,7 +106,7 @@ export class UserService {
     return `Usuario ${user.name}`;
   }
 
-  async login(dto: LoginRequestDto): Promise<{ message: string }> {
+  async verifyEmail(dto: LoginRequestDto): Promise<{ message: string }> {
     const user = await this.repo.findOne({
       where: { email: dto.email.toLowerCase() },
     });
@@ -136,6 +136,8 @@ export class UserService {
   async validateUser(email: string, code: string): Promise<LoginResponseDto> {
     const user = await this.repo.findOne({ where: { email } });
 
+    // console.log("code", user?.verificationCode, "Codigo",code);
+
     if (!user) {
       throw new UnauthorizedException('Usuário não encontrado');
     }
@@ -159,11 +161,13 @@ export class UserService {
 
     const payload = { sub: user.id, email: user.email };
 
-    const token = this.jwtService.sign(payload);
+    const token = this.jwtService.sign(payload, {
+      expiresIn: 5 * 60 * 60,
+    });
 
     return {
       token,
-      expiresIn: 60,
+      expiresIn: 5 * 60 * 60, // 5 horas em segundos
     };
   }
 }

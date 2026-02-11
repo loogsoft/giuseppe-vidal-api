@@ -34,9 +34,9 @@ export class UsersController {
     return this.usersService.create(dto);
   }
 
-  @Post('/login')
-  login(@Body() dto: LoginRequestDto): Promise<{ message: string }> {
-    return this.usersService.login(dto);
+  @Post('/verify-email')
+  verifyEmail(@Body() dto: LoginRequestDto): Promise<{ message: string }> {
+    return this.usersService.verifyEmail(dto);
   }
 
   @Post('verify-code')
