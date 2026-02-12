@@ -40,7 +40,7 @@ export class ProductsController {
   ) {
     return plainToInstance(
       ProductResponseDto,
-      await this.productsService.create(dto, files),
+      await this.productsService.create(dto /* files */),
     );
   }
 
