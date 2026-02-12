@@ -6,10 +6,14 @@ import {
   CreateDateColumn,
   UpdateDateColumn,
   Index,
+  ManyToOne,
+  JoinColumn,
 } from 'typeorm';
 import { ImageEntity } from './image.entity';
 import { ProductCategoryEnum } from 'src/dtos/enums/product-category.enum';
 import { ProductStatusEnum } from 'src/dtos/enums/product-status.enum';
+import { SupplierEntity } from './supplier.entity';
+import { ProductVariationEntity } from './product-variation.entity';
 
 @Entity('products')
 export class ProductEntity {
@@ -27,8 +31,12 @@ export class ProductEntity {
   @Column({ type: 'enum', enum: ProductCategoryEnum })
   category: ProductCategoryEnum;
 
-  @Column({ type: 'enum', enum: ProductStatusEnum, nullable: true })
-  isActive?: ProductStatusEnum;
+  @Column({
+    type: 'enum',
+    enum: ProductStatusEnum,
+    default: ProductStatusEnum.ACTIVED,
+  })
+  status: ProductStatusEnum;
 
   @Column({ type: 'numeric', precision: 12, scale: 2 })
   price: string;
@@ -36,16 +44,29 @@ export class ProductEntity {
   @Column({ type: 'numeric', precision: 12, scale: 2, nullable: true })
   promoPrice?: string;
 
-  @Column({ nullable: false })
-  stockEnabled: boolean;
+  @Column({ default: true })
+  isActiveStock: boolean;
 
-  @Column({ nullable: true, default: 0 })
-  stock?: number;
+  // Só usar se NÃO tiver variação
+  @Column({ default: 0 })
+  stock: number;
 
   @OneToMany(() => ImageEntity, (image) => image.product, {
     cascade: true,
   })
   images: ImageEntity[];
+
+  @ManyToOne(() => SupplierEntity, (supplier) => supplier.products, {
+    nullable: true,
+    onDelete: 'SET NULL',
+  })
+  @JoinColumn({ name: 'supplier_id' })
+  supplier?: SupplierEntity;
+
+  @OneToMany(() => ProductVariationEntity, (variation) => variation.product, {
+    cascade: true,
+  })
+  variations: ProductVariationEntity[];
 
   @CreateDateColumn()
   createdAt: Date;

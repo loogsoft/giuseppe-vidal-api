@@ -1,8 +1,9 @@
 import { Expose, Type } from 'class-transformer';
 import { ProductCategoryEnum } from '../enums/product-category.enum';
-import { ProductAddonRequestDto } from '../request/product-addons-request.dto';
 import { ProductImageResponseDto } from './product-images-response.tdo';
 import { ProductStatusEnum } from '../enums/product-status.enum';
+import { ProductVariationResponseDto } from './product-variation-response.dto';
+import { SupplierResponseDto } from './supplier-response.dto';
 
 export class ProductResponseDto {
   @Expose()
@@ -18,7 +19,7 @@ export class ProductResponseDto {
   category: ProductCategoryEnum;
 
   @Expose()
-  isActive: ProductStatusEnum;
+  status: ProductStatusEnum;
 
   @Expose()
   price: string;
@@ -27,17 +28,22 @@ export class ProductResponseDto {
   promoPrice?: string;
 
   @Expose()
-  stockEnabled: boolean;
+  isActiveStock: boolean;
 
   @Expose()
-  stock?: number;
+  stock: number;
 
   @Expose()
   @Type(() => ProductImageResponseDto)
   images: ProductImageResponseDto[];
 
   @Expose()
-  addons?: ProductAddonRequestDto[];
+  @Type(() => ProductVariationResponseDto)
+  variations: ProductVariationResponseDto[];
+
+  @Expose()
+  @Type(() => SupplierResponseDto)
+  supplier?: SupplierResponseDto;
 
   @Expose()
   createdAt: Date;

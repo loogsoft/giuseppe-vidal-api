@@ -12,30 +12,29 @@ import {
   IsNotEmpty,
 } from 'class-validator';
 import { ProductCategoryEnum } from '../enums/product-category.enum';
-import { ProductAddonRequestDto } from './product-addons-request.dto';
+import { ProductVariationRequestDto } from './product-variation-request.dto';
 import { ProductStatusEnum } from '../enums/product-status.enum';
+import { SupplierEntity } from 'src/entities/supplier.entity';
+import { ManyToOne, JoinColumn, Column } from 'typeorm';
 
 export class ProductRequestDto {
   @IsString()
-  @IsNotEmpty({ message: 'Campo nome fazio' })
+  @IsNotEmpty({ message: 'Campo nome vazio' })
   name: string;
 
   @IsOptional()
   @IsString()
-  @IsNotEmpty({ message: 'Campo descrição vazio' })
   description?: string;
 
   @IsEnum(ProductCategoryEnum)
-  @IsNotEmpty({ message: 'Campo categoria vazio' })
   category: ProductCategoryEnum;
 
   @IsOptional()
   @IsEnum(ProductStatusEnum)
-  isActive?: ProductStatusEnum;
+  status?: ProductStatusEnum;
 
   @IsNumber()
   @Min(0)
-  @IsNotEmpty({ message: 'Campo price vazio' })
   price: number;
 
   @IsOptional()
@@ -45,7 +44,7 @@ export class ProductRequestDto {
 
   @Transform(({ value }) => value === true || value === 'true')
   @IsBoolean()
-  stockEnabled: boolean;
+  isActiveStock: boolean;
 
   @IsOptional()
   @IsInt()
@@ -55,6 +54,13 @@ export class ProductRequestDto {
   @IsOptional()
   @IsArray()
   @ValidateNested({ each: true })
-  @Type(() => ProductAddonRequestDto)
-  addons?: ProductAddonRequestDto[];
+  @Type(() => ProductVariationRequestDto)
+  variations?: ProductVariationRequestDto[];
+
+  @ManyToOne(() => SupplierEntity, { nullable: true })
+  @JoinColumn({ name: 'supplierId' }) // 🔥 ESSA LINHA É OBRIGATÓRIA
+  supplier: SupplierEntity;
+
+  @Column({ nullable: true })
+  supplierId: string;
 }

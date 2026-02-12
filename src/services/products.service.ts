@@ -1,11 +1,12 @@
 import { Injectable, Logger, NotFoundException } from '@nestjs/common';
 import { Repository } from 'typeorm';
 import { InjectRepository } from '@nestjs/typeorm';
-import { ProductEntity } from 'src/entities/product-entity';
+import { ProductEntity } from 'src/entities/product.entity';
 import { ProductRequestDto } from 'src/dtos/request/product-request.dto';
 import { UpdateProductRequestDto } from 'src/dtos/request/update-product.dto';
-import { ImageService } from './image.service';
 import { ProductStatusEnum } from 'src/dtos/enums/product-status.enum';
+import { SupplierEntity } from 'src/entities/supplier.entity';
+import { ProductVariationEntity } from 'src/entities/product-variation.entity';
 
 @Injectable()
 export class ProductsService {
@@ -14,94 +15,154 @@ export class ProductsService {
   constructor(
     @InjectRepository(ProductEntity)
     private readonly repo: Repository<ProductEntity>,
-    private readonly imageService: ImageService,
+
+    @InjectRepository(SupplierEntity)
+    private readonly supplierRepo: Repository<SupplierEntity>,
   ) {}
 
-  async create(dto: ProductRequestDto, files?: Express.Multer.File[]) {
-    this.logger.log('Criando produto');
-    this.logger.debug(`Payload recebido: ${JSON.stringify(dto)}`);
+  /* =====================================================
+      CREATE (MANTIDO COMO VOCÊ FEZ)
+  ===================================================== */
 
-    const product = this.repo.create({
-      ...dto,
-      stockEnabled: Boolean(dto.stockEnabled),
-      price: dto.price.toString(),
-      promoPrice: dto.promoPrice?.toString(),
-      isActive:
-        dto.isActive === ProductStatusEnum.ACTIVED
-          ? ProductStatusEnum.ACTIVED
-          : ProductStatusEnum.DISABLED,
-    });
+  async create(dto: ProductRequestDto /* files?: Express.Multer.File[] */) {
+    let supplier: SupplierEntity | null = null;
 
-    await this.repo.save(product);
-    this.logger.log(`Produto criado com ID: ${product.id}`);
+    if (dto.supplierId) {
+      supplier = await this.supplierRepo.findOne({
+        where: { id: dto.supplierId },
+      });
 
-    if (files?.length) {
-      this.logger.log(
-        `Salvando ${files.length} imagens para o produto ${product.id}`,
-      );
-      const images = await this.imageService.saveAll(files, product);
-      product.images = images;
-      await this.repo.save(product);
-      this.logger.log(`Imagens salvas para o produto ${product.id}`);
+      if (!supplier) {
+        throw new NotFoundException('Fornecedor não encontrado');
+      }
     }
 
-    return this.findOne(product.id);
+    const { variations, supplierId, ...dtoWithoutVariations } = dto;
+
+    const product = this.repo.create({
+      ...dtoWithoutVariations,
+      price: dto.price.toString(),
+      promoPrice: dto.promoPrice?.toString(),
+
+      // 🔥 Forçando salvar o id
+
+      // 🔥 Mantendo relação
+      supplier: supplier ?? undefined,
+
+      variations: variations
+        ? variations.map((v) =>
+            Object.assign(new ProductVariationEntity(), {
+              name: v.name,
+              price: v.price?.toString(),
+              stock: v.stock,
+              color: v.color,
+              size: v.size,
+              isActive: v.isActive ?? true,
+            }),
+          )
+        : [],
+    });
+
+    const savedProduct = await this.repo.save(product);
+
+    return this.findOne(savedProduct.id);
   }
 
-  findAll() {
-    this.logger.log('Buscando lista de produtos');
+  /* =====================================================
+      FIND ALL
+  ===================================================== */
+
+  async findAll() {
     return this.repo.find({
-      relations: ['images'],
+      relations: {
+        images: true,
+        supplier: true,
+        variations: true,
+      },
+      order: {
+        createdAt: 'DESC',
+      },
     });
   }
 
-  async findOne(id: string) {
-    this.logger.log(`Buscando produto pelo ID: ${id}`);
+  /* =====================================================
+      FIND ONE
+  ===================================================== */
 
+  async findOne(id: string) {
     const product = await this.repo.findOne({
       where: { id },
-      relations: ['images'],
+      relations: {
+        images: true,
+        supplier: true,
+        variations: true,
+      },
     });
 
     if (!product) {
-      this.logger.warn(`Produto não encontrado: ${id}`);
       throw new NotFoundException('Produto não encontrado');
     }
 
-    this.logger.log(`Produto encontrado: ${id}`);
     return product;
   }
 
+  /* =====================================================
+      UPDATE
+  ===================================================== */
+
   async update(id: string, dto: UpdateProductRequestDto) {
-    this.logger.log(`Atualizando produto: ${id}`);
-    this.logger.debug(`Payload de atualização: ${JSON.stringify(dto)}`);
-
     const product = await this.findOne(id);
-    Object.assign(product, dto);
 
-    const updated = await this.repo.save(product);
-    this.logger.log(`Produto atualizado com sucesso: ${id}`);
+    // Atualiza variações se vier no DTO
+    if (dto.variations) {
+      product.variations = dto.variations.map((v) =>
+        Object.assign(new ProductVariationEntity(), {
+          name: v.name,
+          price: v.price?.toString(),
+          stock: v.stock,
+          color: v.color,
+          size: v.size,
+          isActive: v.isActive ?? true,
+        }),
+      );
+    }
 
-    return updated;
+    Object.assign(product, {
+      ...dto,
+      price: dto.price?.toString(),
+      promoPrice: dto.promoPrice?.toString(),
+    });
+
+    await this.repo.save(product);
+
+    return this.findOne(id);
   }
 
+  /* =====================================================
+      REMOVE
+  ===================================================== */
+
   async remove(id: string) {
-    this.logger.log(`Removendo produto: ${id}`);
+    const result = await this.repo.delete(id);
 
-    const product = await this.findOne(id);
-    await this.repo.remove(product);
+    if (!result.affected) {
+      throw new NotFoundException('Produto não encontrado');
+    }
 
-    this.logger.log(`Produto removido com sucesso: ${id}`);
     return { message: 'Produto removido com sucesso' };
   }
 
-  async actived(id: string, status: ProductStatusEnum) {
-    this.logger.log(`Alterando status do produto ${id} para ${status}`);
+  /* =====================================================
+      CHANGE STATUS
+  ===================================================== */
 
-    await this.findOne(id);
-    await this.repo.update(id, { isActive: status });
+  async changeStatus(id: string, status: ProductStatusEnum) {
+    const product = await this.findOne(id);
 
-    this.logger.log(`Status do produto ${id} atualizado para ${status}`);
+    product.status = status;
+
+    await this.repo.save(product);
+
     return { message: `Produto ${status}` };
   }
 }

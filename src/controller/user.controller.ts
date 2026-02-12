@@ -71,4 +71,10 @@ export class UsersController {
   remove(@Param('id') id: string) {
     return this.usersService.remove(id);
   }
+
+  @Get('activate-api')
+  activateApi() {
+    console.log('API activated');
+    return { message: 'API activated' };
+  }
 }

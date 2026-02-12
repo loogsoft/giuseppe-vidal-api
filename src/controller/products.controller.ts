@@ -13,7 +13,6 @@ import { FilesInterceptor } from '@nestjs/platform-express';
 import { diskStorage } from 'multer';
 import { extname } from 'path';
 import { plainToInstance } from 'class-transformer';
-import { ProductStatusEnum } from 'src/dtos/enums/product-status.enum';
 import { ProductRequestDto } from 'src/dtos/request/product-request.dto';
 import { UpdateProductRequestDto } from 'src/dtos/request/update-product.dto';
 import { ProductResponseDto } from 'src/dtos/response/product-response.dto';
@@ -74,8 +73,8 @@ export class ProductsController {
     return this.productsService.remove(id);
   }
 
-  @Patch(':id/status')
-  actived(@Param('id') id: string, @Body('status') status: ProductStatusEnum) {
-    return this.productsService.actived(id, status);
-  }
+  // @Patch(':id/status')
+  // actived(@Param('id') id: string, @Body('status') status: ProductStatusEnum) {
+  //   return this.productsService.(id, status);
+  // }
 }
