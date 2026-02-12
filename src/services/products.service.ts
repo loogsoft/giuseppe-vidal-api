@@ -38,7 +38,7 @@ export class ProductsService {
     }
 
     const { variations, supplierId, ...dtoWithoutVariations } = dto;
-
+ 
     const product = this.repo.create({
       ...dtoWithoutVariations,
       price: dto.price.toString(),
