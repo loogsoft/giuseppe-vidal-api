@@ -4,6 +4,7 @@ import { Controller, Get } from '@nestjs/common';
 export class HealthController {
   @Get()
   findAll() {
+    console.log('API is online');
     return 'API ONLINE';
   }
 }
