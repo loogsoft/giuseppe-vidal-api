@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { SupplierRequestDto } from 'src/dtos/request/supplier-request.dto';
 import { SupplierEntity } from 'src/entities/supplier.entity';
@@ -22,5 +22,14 @@ export class SuppliersService {
 
   async findOne(id: string) {
     return this.repo.findOne({ where: { id } });
+  }
+  async remove(id: string) {
+    const result = await this.repo.delete(id);
+
+    if (!result.affected) {
+      throw new NotFoundException('Produto não encontrado');
+    }
+
+    return { message: 'Produto removido com sucesso' };
   }
 }

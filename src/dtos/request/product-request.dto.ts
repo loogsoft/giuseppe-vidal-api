@@ -16,6 +16,7 @@ import { ProductVariationRequestDto } from './product-variation-request.dto';
 import { ProductStatusEnum } from '../enums/product-status.enum';
 import { SupplierEntity } from 'src/entities/supplier.entity';
 import { ManyToOne, JoinColumn, Column } from 'typeorm';
+import { SupplierRequestDto } from './supplier-request.dto';
 
 export class ProductRequestDto {
   @IsString()
@@ -59,7 +60,7 @@ export class ProductRequestDto {
 
   @ManyToOne(() => SupplierEntity, { nullable: true })
   @JoinColumn({ name: 'supplierId' }) // 🔥 ESSA LINHA É OBRIGATÓRIA
-  supplier: SupplierEntity;
+  supplier: SupplierRequestDto;
 
   @Column({ nullable: true })
   supplierId: string;

@@ -20,10 +20,6 @@ export class ProductsService {
     private readonly supplierRepo: Repository<SupplierEntity>,
   ) {}
 
-  /* =====================================================
-      CREATE (MANTIDO COMO VOCÊ FEZ)
-  ===================================================== */
-
   async create(dto: ProductRequestDto /* files?: Express.Multer.File[] */) {
     let supplier: SupplierEntity | null = null;
 
@@ -43,10 +39,6 @@ export class ProductsService {
       ...dtoWithoutVariations,
       price: dto.price.toString(),
       promoPrice: dto.promoPrice?.toString(),
-
-      // 🔥 Forçando salvar o id
-
-      // 🔥 Mantendo relação
       supplier: supplier ?? undefined,
 
       variations: variations
@@ -68,10 +60,6 @@ export class ProductsService {
     return this.findOne(savedProduct.id);
   }
 
-  /* =====================================================
-      FIND ALL
-  ===================================================== */
-
   async findAll() {
     return this.repo.find({
       relations: {
@@ -84,10 +72,6 @@ export class ProductsService {
       },
     });
   }
-
-  /* =====================================================
-      FIND ONE
-  ===================================================== */
 
   async findOne(id: string) {
     const product = await this.repo.findOne({
@@ -105,10 +89,6 @@ export class ProductsService {
 
     return product;
   }
-
-  /* =====================================================
-      UPDATE
-  ===================================================== */
 
   async update(id: string, dto: UpdateProductRequestDto) {
     const product = await this.findOne(id);
@@ -138,10 +118,6 @@ export class ProductsService {
     return this.findOne(id);
   }
 
-  /* =====================================================
-      REMOVE
-  ===================================================== */
-
   async remove(id: string) {
     const result = await this.repo.delete(id);
 
@@ -151,10 +127,6 @@ export class ProductsService {
 
     return { message: 'Produto removido com sucesso' };
   }
-
-  /* =====================================================
-      CHANGE STATUS
-  ===================================================== */
 
   async changeStatus(id: string, status: ProductStatusEnum) {
     const product = await this.findOne(id);

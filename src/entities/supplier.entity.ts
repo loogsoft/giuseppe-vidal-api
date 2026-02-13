@@ -16,11 +16,26 @@ export class SupplierEntity {
   @Column({ length: 180 })
   name: string;
 
+  @Column({ length: 120, nullable: true })
+  category?: string;
+
   @Column({ nullable: true })
   email?: string;
 
   @Column({ nullable: true })
   phone?: string;
+
+  @Column({ length: 180, nullable: true })
+  location?: string;
+
+  @Column({ length: 16, default: 'active' })
+  status: string;
+
+  @Column({ length: 16, nullable: true })
+  avatarColor?: string;
+
+  @Column({ type: 'int', default: 0 })
+  openOrders: number;
 
   @OneToMany(() => ProductEntity, (product) => product.supplier, {
     nullable: true,

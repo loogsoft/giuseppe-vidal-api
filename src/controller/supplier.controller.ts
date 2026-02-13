@@ -1,4 +1,4 @@
-import { Controller, Post, Body, Get, Param } from '@nestjs/common';
+import { Controller, Post, Body, Get, Param, Delete } from '@nestjs/common';
 import { SupplierRequestDto } from 'src/dtos/request/supplier-request.dto';
 import { SuppliersService } from 'src/services/supplier.service';
 
@@ -19,5 +19,10 @@ export class SuppliersController {
   @Get(':id')
   findOne(@Param('id') id: string) {
     return this.service.findOne(id);
+  }
+
+  @Delete(':id')
+  async remove(@Param('id') id: string) {
+    return this.service.remove(id);
   }
 }

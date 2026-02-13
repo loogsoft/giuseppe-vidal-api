@@ -8,8 +8,23 @@ export class SupplierResponseDto {
   name: string;
 
   @Expose()
+  category?: string;
+
+  @Expose()
   email?: string;
 
   @Expose()
   phone?: string;
+
+  @Expose()
+  location?: string;
+
+  @Expose()
+  status?: string;
+
+  @Expose()
+  avatarColor?: string;
+
+  @Expose()
+  openOrders?: number;
 }
