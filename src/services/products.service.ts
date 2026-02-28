@@ -1,12 +1,22 @@
 import { Injectable, Logger, NotFoundException } from '@nestjs/common';
+
 import { Repository } from 'typeorm';
+
 import { InjectRepository } from '@nestjs/typeorm';
+
 import { ProductEntity } from 'src/entities/product.entity';
-import { ProductRequestDto } from 'src/dtos/request/product-request.dto';
-import { UpdateProductRequestDto } from 'src/dtos/request/update-product.dto';
-import { ProductStatusEnum } from 'src/dtos/enums/product-status.enum';
+
 import { SupplierEntity } from 'src/entities/supplier.entity';
+
 import { ProductVariationEntity } from 'src/entities/product-variation.entity';
+
+import { ProductRequestDto } from 'src/dtos/request/product-request.dto';
+
+import { UpdateProductRequestDto } from 'src/dtos/request/update-product.dto';
+
+import { ImageService } from 'src/services/image.service';
+
+import { toLogString } from 'src/utils/logging';
 
 @Injectable()
 export class ProductsService {
@@ -18,64 +28,91 @@ export class ProductsService {
 
     @InjectRepository(SupplierEntity)
     private readonly supplierRepo: Repository<SupplierEntity>,
+
+    private readonly imageService: ImageService,
   ) {}
 
-  async create(dto: ProductRequestDto /* files?: Express.Multer.File[] */) {
-    let supplier: SupplierEntity | null = null;
+  // CREATE PRODUCT
+  async create(dto: ProductRequestDto, files?: Express.Multer.File[]) {
+    this.logger.log(`create:start ${toLogString({ dto })}`);
 
-    if (dto.supplierId) {
-      supplier = await this.supplierRepo.findOne({
-        where: { id: dto.supplierId },
+    try {
+      let supplier: SupplierEntity | null = null;
+
+      if (dto.supplierId) {
+        supplier = await this.supplierRepo.findOne({
+          where: { id: dto.supplierId },
+        });
+
+        if (!supplier) throw new NotFoundException('Fornecedor não encontrado');
+      }
+
+      const { variations, supplierId, ...dtoWithoutVariations } = dto;
+
+      // UPLOAD IMAGENS CLOUDINARY
+      const images = await this.imageService.createImages(files ?? []);
+
+      const product = this.repo.create({
+        ...dtoWithoutVariations,
+
+        price: dto.price.toString(),
+
+        promoPrice: dto.promoPrice?.toString(),
+
+        supplier: supplier ?? undefined,
+
+        images: images,
+
+        variations: variations
+          ? variations.map((v) =>
+              Object.assign(new ProductVariationEntity(), {
+                price: v.price?.toString(),
+                stock: v.stock,
+                color: v.color,
+                size: v.size,
+                imageUrl: v.imageUrl, // ✅
+                isActive: v.isActive ?? true,
+              }),
+            )
+          : [],
       });
 
-      if (!supplier) {
-        throw new NotFoundException('Fornecedor não encontrado');
-      }
+      const savedProduct = await this.repo.save(product);
+
+      this.logger.log(
+        `create:success ${toLogString({
+          id: savedProduct.id,
+        })}`,
+      );
+
+      return await this.findOne(savedProduct.id);
+    } catch (err) {
+      this.logger.error(err);
+
+      throw err;
     }
-
-    const { variations, supplierId, ...dtoWithoutVariations } = dto;
- 
-    const product = this.repo.create({
-      ...dtoWithoutVariations,
-      price: dto.price.toString(),
-      promoPrice: dto.promoPrice?.toString(),
-      supplier: supplier ?? undefined,
-
-      variations: variations
-        ? variations.map((v) =>
-            Object.assign(new ProductVariationEntity(), {
-              name: v.name,
-              price: v.price?.toString(),
-              stock: v.stock,
-              color: v.color,
-              size: v.size,
-              isActive: v.isActive ?? true,
-            }),
-          )
-        : [],
-    });
-
-    const savedProduct = await this.repo.save(product);
-
-    return this.findOne(savedProduct.id);
   }
 
+  // FIND ALL
   async findAll() {
-    return this.repo.find({
+    return await this.repo.find({
       relations: {
         images: true,
         supplier: true,
         variations: true,
       },
+
       order: {
         createdAt: 'DESC',
       },
     });
   }
 
+  // FIND ONE
   async findOne(id: string) {
     const product = await this.repo.findOne({
       where: { id },
+
       relations: {
         images: true,
         supplier: true,
@@ -83,58 +120,44 @@ export class ProductsService {
       },
     });
 
-    if (!product) {
-      throw new NotFoundException('Produto não encontrado');
-    }
+    if (!product) throw new NotFoundException('Produto não encontrado');
 
     return product;
   }
 
-  async update(id: string, dto: UpdateProductRequestDto) {
+  // UPDATE
+  async update(
+    id: string,
+    dto: UpdateProductRequestDto,
+    files?: Express.Multer.File[],
+  ) {
     const product = await this.findOne(id);
 
-    // Atualiza variações se vier no DTO
-    if (dto.variations) {
-      product.variations = dto.variations.map((v) =>
-        Object.assign(new ProductVariationEntity(), {
-          name: v.name,
-          price: v.price?.toString(),
-          stock: v.stock,
-          color: v.color,
-          size: v.size,
-          isActive: v.isActive ?? true,
-        }),
-      );
+    if (files && files.length > 0) {
+      const newImages = await this.imageService.createImages(files);
+
+      product.images = [...product.images, ...newImages];
     }
 
     Object.assign(product, {
       ...dto,
+
       price: dto.price?.toString(),
+
       promoPrice: dto.promoPrice?.toString(),
     });
 
-    await this.repo.save(product);
-
-    return this.findOne(id);
+    return await this.repo.save(product);
   }
 
+  // DELETE
   async remove(id: string) {
-    const result = await this.repo.delete(id);
-
-    if (!result.affected) {
-      throw new NotFoundException('Produto não encontrado');
-    }
-
-    return { message: 'Produto removido com sucesso' };
-  }
-
-  async changeStatus(id: string, status: ProductStatusEnum) {
     const product = await this.findOne(id);
 
-    product.status = status;
+    await this.repo.remove(product);
 
-    await this.repo.save(product);
-
-    return { message: `Produto ${status}` };
+    return {
+      message: 'Produto deletado com sucesso',
+    };
   }
 }

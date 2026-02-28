@@ -36,6 +36,9 @@ export class ProductVariationEntity {
   @Column()
   size: string;
 
+  @Column({ nullable: true })
+  imageUrl?: string;
+
   @ManyToOne(() => ProductEntity, (product) => product.variations, {
     onDelete: 'CASCADE',
   })

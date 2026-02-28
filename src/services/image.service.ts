@@ -1,29 +1,66 @@
 import { Injectable } from '@nestjs/common';
-import { InjectRepository } from '@nestjs/typeorm';
 import { ImageEntity } from 'src/entities/image.entity';
 import { Repository } from 'typeorm';
-import { ProductEntity } from 'src/entities/product.entity';
+import { InjectRepository } from '@nestjs/typeorm';
+import cloudinary from 'src/config/cloudinary.config';
 
 @Injectable()
 export class ImageService {
+
   constructor(
+
     @InjectRepository(ImageEntity)
     private readonly repo: Repository<ImageEntity>,
+
   ) {}
 
-  async saveAll(
-    files: Express.Multer.File[],
-    product: ProductEntity,
-  ): Promise<ImageEntity[]> {
-    const images = files.map((file, index) =>
-      this.repo.create({
-        fileName: file.originalname,
-        url: `uploads/${file.filename}`,
-        isPrimary: index === 0,
-        product,
-      }),
-    );
+  async uploadToCloudinary(file: Express.Multer.File): Promise<any> {
 
-    return this.repo.save(images);
+    return new Promise((resolve, reject) => {
+
+      cloudinary.uploader.upload_stream(
+
+        {
+          folder: 'products',
+        },
+
+        (error, result) => {
+
+          if (error) return reject(error);
+
+          resolve(result);
+
+        },
+
+      ).end(file.buffer);
+
+    });
+
   }
+
+  async createImages(files: Express.Multer.File[]): Promise<ImageEntity[]> {
+
+    const images: ImageEntity[] = [];
+
+    for (const file of files) {
+
+      const uploadResult: any =
+        await this.uploadToCloudinary(file);
+
+      const image = this.repo.create({
+
+        url: uploadResult.secure_url,
+
+        publicId: uploadResult.public_id,
+
+      });
+
+      images.push(image);
+
+    }
+
+    return images;
+
+  }
+
 }

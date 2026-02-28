@@ -1,5 +1,6 @@
 import {
   Injectable,
+  Logger,
   NotFoundException,
   UnauthorizedException,
 } from '@nestjs/common';
@@ -14,9 +15,12 @@ import { LoginRequestDto } from 'src/dtos/request/login-request.dto';
 import { LoginResponseDto } from 'src/dtos/response/login-response.dto';
 import { JwtService } from '@nestjs/jwt';
 import { EmailService } from './email.service';
+import { toLogString } from 'src/utils/logging';
 
 @Injectable()
 export class UserService {
+  private readonly logger = new Logger(UserService.name);
+
   constructor(
     @InjectRepository(UserEntity)
     private repo: Repository<UserEntity>,
@@ -29,145 +33,228 @@ export class UserService {
   }
 
   async create(dto: UserRequestDto): Promise<UserResponseDto> {
-    const userExists = await this.repo.findOne({
-      where: { email: dto.email },
-    });
+    this.logger.log(`create:start ${toLogString({ dto })}`);
 
-    if (userExists) {
-      throw new Error('Email já cadastrado');
+    try {
+      const userExists = await this.repo.findOne({
+        where: { email: dto.email },
+      });
+
+      if (userExists) {
+        throw new Error('Email já cadastrado');
+      }
+
+      const passwordHash = await bcrypt.hash(dto.password, 10);
+
+      const userSave = this.repo.create({
+        name: dto.name,
+        email: dto.email,
+        password: passwordHash,
+        userType: dto.userType,
+      });
+
+      const savedUser = await this.repo.save(userSave);
+
+      const result = plainToInstance(UserResponseDto, savedUser, {
+        excludeExtraneousValues: true,
+      });
+
+      this.logger.log(`create:success ${toLogString({ id: savedUser.id })}`);
+
+      return result;
+    } catch (err) {
+      const errorStack = err instanceof Error ? err.stack : String(err);
+      this.logger.error('create:error', errorStack);
+      throw err;
     }
-
-    const passwordHash = await bcrypt.hash(dto.password, 10);
-
-    const userSave = this.repo.create({
-      name: dto.name,
-      email: dto.email,
-      password: passwordHash,
-      userType: dto.userType,
-    });
-
-    const savedUser = await this.repo.save(userSave);
-
-    return plainToInstance(UserResponseDto, savedUser, {
-      excludeExtraneousValues: true,
-    });
   }
 
   async findAll(): Promise<UserResponseDto[]> {
-    const users = await this.repo.find();
-    return plainToInstance(UserResponseDto, users);
+    this.logger.log('findAll:start');
+
+    try {
+      const users = await this.repo.find();
+      const result = plainToInstance(UserResponseDto, users);
+
+      this.logger.log(
+        `findAll:success ${toLogString({ count: users.length })}`,
+      );
+
+      return result;
+    } catch (err) {
+      const errorStack = err instanceof Error ? err.stack : String(err);
+      this.logger.error('findAll:error', errorStack);
+      throw err;
+    }
   }
 
   async findOne(id: string): Promise<UserResponseDto> {
-    const user = await this.repo.findOne({
-      where: { id },
-    });
-    return plainToInstance(UserResponseDto, user);
+    this.logger.log(`findOne:start ${toLogString({ id })}`);
+
+    try {
+      const user = await this.repo.findOne({
+        where: { id },
+      });
+      const result = plainToInstance(UserResponseDto, user);
+
+      this.logger.log(`findOne:success ${toLogString({ id })}`);
+
+      return result;
+    } catch (err) {
+      const errorStack = err instanceof Error ? err.stack : String(err);
+      this.logger.error('findOne:error', errorStack);
+      throw err;
+    }
   }
   async update(id: string, dto: UserRequestDto): Promise<UserResponseDto> {
-    const user = await this.repo.findOne({
-      where: { id },
-    });
+    this.logger.log(`update:start ${toLogString({ id, dto })}`);
 
-    if (!user) {
-      throw new NotFoundException('Usuário não encontrado');
+    try {
+      const user = await this.repo.findOne({
+        where: { id },
+      });
+
+      if (!user) {
+        throw new NotFoundException('Usuário não encontrado');
+      }
+
+      if (dto.name) {
+        user.name = dto.name;
+      }
+
+      if (dto.email) {
+        user.email = dto.email;
+      }
+
+      if (dto.password) {
+        user.password = await bcrypt.hash(dto.password, 10);
+      }
+
+      const updatedUser = await this.repo.save(user);
+      const result = plainToInstance(UserResponseDto, updatedUser, {
+        excludeExtraneousValues: true,
+      });
+
+      this.logger.log(`update:success ${toLogString({ id })}`);
+
+      return result;
+    } catch (err) {
+      const errorStack = err instanceof Error ? err.stack : String(err);
+      this.logger.error('update:error', errorStack);
+      throw err;
     }
-
-    if (dto.name) {
-      user.name = dto.name;
-    }
-
-    if (dto.email) {
-      user.email = dto.email;
-    }
-
-    if (dto.password) {
-      user.password = await bcrypt.hash(dto.password, 10);
-    }
-
-    const updatedUser = await this.repo.save(user);
-
-    return plainToInstance(UserResponseDto, updatedUser, {
-      excludeExtraneousValues: true,
-    });
   }
 
   async remove(id: string): Promise<string> {
-    const user = await this.repo.findOne({
-      where: { id },
-    });
+    this.logger.log(`remove:start ${toLogString({ id })}`);
 
-    if (!user) {
-      throw new NotFoundException('Usuário não encontrado');
+    try {
+      const user = await this.repo.findOne({
+        where: { id },
+      });
+
+      if (!user) {
+        throw new NotFoundException('Usuário não encontrado');
+      }
+
+      await this.repo.remove(user);
+
+      this.logger.log(`remove:success ${toLogString({ id })}`);
+
+      return `Usuario ${user.name}`;
+    } catch (err) {
+      const errorStack = err instanceof Error ? err.stack : String(err);
+      this.logger.error('remove:error', errorStack);
+      throw err;
     }
-
-    await this.repo.remove(user);
-
-    return `Usuario ${user.name}`;
   }
 
   async verifyEmail(dto: LoginRequestDto): Promise<{ message: string }> {
-    const user = await this.repo.findOne({
-      where: { email: dto.email.toLowerCase() },
-    });
+    this.logger.log(`verifyEmail:start ${toLogString({ email: dto.email })}`);
 
-    if (!user) {
-      throw new UnauthorizedException('Email ou senha inválidos');
+    try {
+      const user = await this.repo.findOne({
+        where: { email: dto.email.toLowerCase() },
+      });
+
+      if (!user) {
+        throw new UnauthorizedException('Email ou senha inválidos');
+      }
+
+      const passwordMatch = await bcrypt.compare(dto.password, user.password);
+
+      if (!passwordMatch) {
+        throw new UnauthorizedException('Email ou senha inválidos');
+      }
+
+      const code = this.generateCode();
+
+      user.verificationCode = code;
+      user.codeExpiresAt = new Date(Date.now() + 5 * 60 * 1000);
+
+      await this.repo.save(user);
+
+      this.emailService.sendVerificationCode(user.email, code);
+
+      this.logger.log(
+        `verifyEmail:success ${toLogString({ id: user.id, email: user.email })}`,
+      );
+
+      return { message: 'Código de verificação enviado para o email' };
+    } catch (err) {
+      const errorStack = err instanceof Error ? err.stack : String(err);
+      this.logger.error('verifyEmail:error', errorStack);
+      throw err;
     }
-
-    const passwordMatch = await bcrypt.compare(dto.password, user.password);
-
-    if (!passwordMatch) {
-      throw new UnauthorizedException('Email ou senha inválidos');
-    }
-
-    const code = this.generateCode();
-
-    user.verificationCode = code;
-    user.codeExpiresAt = new Date(Date.now() + 5 * 60 * 1000);
-
-    await this.repo.save(user);
-
-    this.emailService.sendVerificationCode(user.email, code);
-
-    return { message: 'Código de verificação enviado para o email' };
   }
 
   async validateUser(email: string, code: string): Promise<LoginResponseDto> {
-    const user = await this.repo.findOne({ where: { email } });
+    this.logger.log(`validateUser:start ${toLogString({ email, code })}`);
 
-    // console.log("code", user?.verificationCode, "Codigo",code);
+    try {
+      const user = await this.repo.findOne({ where: { email } });
 
-    if (!user) {
-      throw new UnauthorizedException('Usuário não encontrado');
+      if (!user) {
+        throw new UnauthorizedException('Usuário não encontrado');
+      }
+
+      if (!user.verificationCode) {
+        throw new UnauthorizedException('Nenhum código gerado');
+      }
+
+      if (user.codeExpiresAt && user.codeExpiresAt < new Date()) {
+        throw new UnauthorizedException('Código expirado');
+      }
+
+      if (user.verificationCode !== code) {
+        throw new UnauthorizedException('Código inválido');
+      }
+
+      user.verificationCode = null;
+      user.codeExpiresAt = null;
+
+      await this.repo.save(user);
+
+      const payload = { sub: user.id, email: user.email };
+
+      const token = this.jwtService.sign(payload, {
+        expiresIn: 5 * 60 * 60,
+      });
+
+      const result = {
+        token,
+        expiresIn: 5 * 60 * 60, // 5 horas em segundos
+      };
+
+      this.logger.log(
+        `validateUser:success ${toLogString({ id: user.id, email: user.email })}`,
+      );
+
+      return result;
+    } catch (err) {
+      const errorStack = err instanceof Error ? err.stack : String(err);
+      this.logger.error('validateUser:error', errorStack);
+      throw err;
     }
-
-    if (!user.verificationCode) {
-      throw new UnauthorizedException('Nenhum código gerado');
-    }
-
-    if (user.codeExpiresAt && user.codeExpiresAt < new Date()) {
-      throw new UnauthorizedException('Código expirado');
-    }
-
-    if (user.verificationCode !== code) {
-      throw new UnauthorizedException('Código inválido');
-    }
-
-    user.verificationCode = null;
-    user.codeExpiresAt = null;
-
-    await this.repo.save(user);
-
-    const payload = { sub: user.id, email: user.email };
-
-    const token = this.jwtService.sign(payload, {
-      expiresIn: 5 * 60 * 60,
-    });
-
-    return {
-      token,
-      expiresIn: 5 * 60 * 60, // 5 horas em segundos
-    };
   }
 }

@@ -1,8 +1,10 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
 import { MailerSend, EmailParams, Sender, Recipient } from 'mailersend';
+import { toLogString } from 'src/utils/logging';
 
 @Injectable()
 export class EmailService {
+  private readonly logger = new Logger(EmailService.name);
   private mailerSend: MailerSend;
 
   constructor() {
@@ -12,6 +14,9 @@ export class EmailService {
   }
 
   async sendVerificationCode(email: string, code: string) {
+    this.logger.log(
+      `sendVerificationCode:start ${toLogString({ email, code })}`,
+    );
     const sentFrom = new Sender(
       'no-reply@test-r6ke4n1jvo3gon12.mlsender.net',
       'Sistema da Loja',
@@ -86,9 +91,10 @@ export class EmailService {
 
     try {
       await this.mailerSend.email.send(emailParams);
-      console.log('✅ Email enviado com sucesso');
+      this.logger.log('sendVerificationCode:success');
     } catch (err) {
-      console.error('❌ Erro ao enviar email via MailerSend:', err);
+      const errorStack = err instanceof Error ? err.stack : String(err);
+      this.logger.error('sendVerificationCode:error', errorStack);
     }
   }
 }

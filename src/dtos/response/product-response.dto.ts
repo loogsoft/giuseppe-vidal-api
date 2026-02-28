@@ -34,12 +34,15 @@ export class ProductResponseDto {
   stock: number;
 
   @Expose()
+  lowStock: number;
+
+  @Expose()
   @Type(() => ProductImageResponseDto)
   images: ProductImageResponseDto[];
 
   @Expose()
   @Type(() => ProductVariationResponseDto)
-  variations: ProductVariationResponseDto[];
+  variations?: ProductVariationResponseDto[];
 
   @Expose()
   @Type(() => SupplierResponseDto)

@@ -10,47 +10,68 @@ import {
   Min,
   ValidateNested,
   IsNotEmpty,
+  IsUUID,
 } from 'class-validator';
+
 import { ProductCategoryEnum } from '../enums/product-category.enum';
 import { ProductVariationRequestDto } from './product-variation-request.dto';
 import { ProductStatusEnum } from '../enums/product-status.enum';
-import { SupplierEntity } from 'src/entities/supplier.entity';
-import { ManyToOne, JoinColumn, Column } from 'typeorm';
-import { SupplierRequestDto } from './supplier-request.dto';
 
 export class ProductRequestDto {
+
   @IsString()
   @IsNotEmpty({ message: 'Campo nome vazio' })
   name: string;
+
 
   @IsOptional()
   @IsString()
   description?: string;
 
+
   @IsEnum(ProductCategoryEnum)
   category: ProductCategoryEnum;
+
 
   @IsOptional()
   @IsEnum(ProductStatusEnum)
   status?: ProductStatusEnum;
 
-  @IsNumber()
-  @Min(0)
+
+  // ⚠ CORREÇÃO IMPORTANTE
+  @Type(() => Number)
+  @IsNumber({}, { message: 'Preço deve ser número' })
+  @Min(0, { message: 'Preço não pode ser negativo' })
   price: number;
 
+
+  // ⚠ CORREÇÃO IMPORTANTE
   @IsOptional()
-  @IsNumber()
-  @Min(0)
+  @Type(() => Number)
+  @IsNumber({}, { message: 'Preço promocional deve ser número' })
+  @Min(0, { message: 'Preço promocional não pode ser negativo' })
   promoPrice?: number;
+
 
   @Transform(({ value }) => value === true || value === 'true')
   @IsBoolean()
   isActiveStock: boolean;
 
+
+  // ⚠ CORREÇÃO IMPORTANTE
   @IsOptional()
-  @IsInt()
-  @Min(0)
+  @Type(() => Number)
+  @IsInt({ message: 'Estoque deve ser inteiro' })
+  @Min(0, { message: 'Estoque não pode ser negativo' })
   stock?: number;
+
+
+  // ⚠ CORREÇÃO IMPORTANTE
+  @Type(() => Number)
+  @IsInt({ message: 'LowStock deve ser inteiro' })
+  @Min(0, { message: 'LowStock não pode ser negativo' })
+  lowStock: number;
+
 
   @IsOptional()
   @IsArray()
@@ -58,10 +79,9 @@ export class ProductRequestDto {
   @Type(() => ProductVariationRequestDto)
   variations?: ProductVariationRequestDto[];
 
-  @ManyToOne(() => SupplierEntity, { nullable: true })
-  @JoinColumn({ name: 'supplierId' }) // 🔥 ESSA LINHA É OBRIGATÓRIA
-  supplier: SupplierRequestDto;
 
-  @Column({ nullable: true })
-  supplierId: string;
+  @IsOptional()
+  @IsUUID()
+  supplierId?: string;
+
 }

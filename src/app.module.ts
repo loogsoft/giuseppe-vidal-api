@@ -7,6 +7,7 @@ import { UserModule } from './modules/user.module';
 import { EmailModule } from './modules/email.module';
 import { SuppliersModule } from './modules/supplier.module';
 import { HealthModule } from './modules/health.module';
+import { UploadModule } from './modules/upload.module';
 
 @Module({
   imports: [
@@ -20,12 +21,12 @@ import { HealthModule } from './modules/health.module';
       inject: [ConfigService],
       useFactory: typeOrmConfig,
     }),
-
     ProductsModule,
     UserModule,
     EmailModule,
     SuppliersModule,
-    HealthModule
+    HealthModule,
+    UploadModule,
   ],
 })
 export class AppModule {}

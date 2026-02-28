@@ -9,72 +9,70 @@ import {
   UploadedFiles,
   UseInterceptors,
 } from '@nestjs/common';
+
 import { FilesInterceptor } from '@nestjs/platform-express';
-import { diskStorage } from 'multer';
-import { extname } from 'path';
+
 import { plainToInstance } from 'class-transformer';
+
 import { ProductRequestDto } from 'src/dtos/request/product-request.dto';
+
 import { UpdateProductRequestDto } from 'src/dtos/request/update-product.dto';
+
 import { ProductResponseDto } from 'src/dtos/response/product-response.dto';
+
 import { ProductsService } from 'src/services/products.service';
 
 @Controller('products')
 export class ProductsController {
   constructor(private readonly productsService: ProductsService) {}
 
+  // CREATE PRODUCT
   @Post()
-  @UseInterceptors(
-    FilesInterceptor('images', 10, {
-      storage: diskStorage({
-        destination: './uploads',
-        filename: (req, file, callback) => {
-          const uniqueName = Date.now() + '-' + Math.round(Math.random() * 1e9);
-          callback(null, uniqueName + extname(file.originalname));
-        },
-      }),
-    }),
-  )
+  @UseInterceptors(FilesInterceptor('images', 10))
   async create(
     @Body() dto: ProductRequestDto,
+
     @UploadedFiles() files: Express.Multer.File[],
   ) {
-    return plainToInstance(
-      ProductResponseDto,
-      await this.productsService.create(dto /* files */),
-    );
+    const product = await this.productsService.create(dto, files);
+
+    return plainToInstance(ProductResponseDto, product);
   }
 
+  // GET ALL
   @Get()
   async findAll() {
-    return plainToInstance(
-      ProductResponseDto,
-      await this.productsService.findAll(),
-    );
+    const products = await this.productsService.findAll();
+
+    return plainToInstance(ProductResponseDto, products);
   }
 
+  // GET ONE
   @Get(':id')
   async findOne(@Param('id') id: string) {
-    return plainToInstance(
-      ProductResponseDto,
-      await this.productsService.findOne(id),
-    );
+    const product = await this.productsService.findOne(id);
+
+    return plainToInstance(ProductResponseDto, product);
   }
 
+  // UPDATE
   @Patch(':id')
-  async update(@Param('id') id: string, @Body() dto: UpdateProductRequestDto) {
-    return plainToInstance(
-      ProductResponseDto,
-      await this.productsService.update(id, dto),
-    );
+  @UseInterceptors(FilesInterceptor('images', 10))
+  async update(
+    @Param('id') id: string,
+
+    @Body() dto: UpdateProductRequestDto,
+
+    @UploadedFiles() files: Express.Multer.File[],
+  ) {
+    const product = await this.productsService.update(id, dto, files);
+
+    return plainToInstance(ProductResponseDto, product);
   }
 
+  // DELETE
   @Delete(':id')
   async remove(@Param('id') id: string) {
     return this.productsService.remove(id);
   }
-
-  // @Patch(':id/status')
-  // actived(@Param('id') id: string, @Body('status') status: ProductStatusEnum) {
-  //   return this.productsService.(id, status);
-  // }
 }
