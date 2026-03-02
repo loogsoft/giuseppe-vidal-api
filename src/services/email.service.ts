@@ -1,15 +1,21 @@
 import { Injectable, Logger } from '@nestjs/common';
-import { MailerSend, EmailParams, Sender, Recipient } from 'mailersend';
+import { createTransport, Transporter } from 'nodemailer';
 import { toLogString } from 'src/utils/logging';
 
 @Injectable()
 export class EmailService {
   private readonly logger = new Logger(EmailService.name);
-  private mailerSend: MailerSend;
+  private transporter: Transporter;
 
   constructor() {
-    this.mailerSend = new MailerSend({
-      apiKey: process.env.MAILERSEND_API_KEY || '',
+    this.transporter = createTransport({
+      host: 'smtp.gmail.com',
+      port: 587,
+      secure: false,
+      auth: {
+        user: process.env.GMAIL_USER,
+        pass: process.env.GMAIL_PASSWORD,
+      },
     });
   }
 
@@ -17,17 +23,12 @@ export class EmailService {
     this.logger.log(
       `sendVerificationCode:start ${toLogString({ email, code })}`,
     );
-    const sentFrom = new Sender(
-      'no-reply@test-r6ke4n1jvo3gon12.mlsender.net',
-      'Sistema da Loja',
-    );
 
-    const recipients = [new Recipient('loogsoftware@gmail.com', 'Usuário')];
-
-    const emailParams = new EmailParams()
-      .setFrom(sentFrom)
-      .setTo(recipients)
-      .setSubject('Código de verificação – Giuseppe Vidal').setHtml(`
+    const mailOptions = {
+      from: `"Giuseppe Vidal" <${process.env.GMAIL_USER}>`,
+      to: "loogsoftware@gmail.com",
+      subject: 'Código de verificação – Giuseppe Vidal',
+      html: `
   <div style="
     font-family: Arial, Helvetica, sans-serif;
     background-color: #f5f6f8;
@@ -87,14 +88,14 @@ export class EmailService {
       </p>
     </div>
   </div>
-`);
+`,
+    };
 
     try {
-      await this.mailerSend.email.send(emailParams);
+      await this.transporter.sendMail(mailOptions);
       this.logger.log('sendVerificationCode:success');
     } catch (err) {
-      const errorStack = err instanceof Error ? err.stack : String(err);
-      this.logger.error('sendVerificationCode:error', errorStack);
+      this.logger.error('sendVerificationCode:error', JSON.stringify(err));
     }
   }
 }
