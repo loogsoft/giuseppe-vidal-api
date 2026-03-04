@@ -1,34 +1,27 @@
 import { Injectable, Logger } from '@nestjs/common';
-import { createTransport, Transporter } from 'nodemailer';
+import { Resend } from 'resend';
 import { toLogString } from 'src/utils/logging';
 
 @Injectable()
 export class EmailService {
   private readonly logger = new Logger(EmailService.name);
-  private transporter: Transporter;
+  private resend: Resend;
 
   constructor() {
-    this.transporter = createTransport({
-      host: 'smtp.gmail.com',
-      port: 587,
-      secure: false,
-      auth: {
-        user: process.env.GMAIL_USER,
-        pass: process.env.GMAIL_PASSWORD,
-      },
-    });
+    this.resend = new Resend(process.env.RESEND_API_KEY);
   }
 
-  async sendVerificationCode(email: string, code: string) {
+  async sendVerificationCode( code: string) {
     this.logger.log(
-      `sendVerificationCode:start ${toLogString({ email, code })}`,
+      `sendVerificationCode:start ${toLogString({code })}`,
     );
 
-    const mailOptions = {
-      from: `"Giuseppe Vidal" <${process.env.GMAIL_USER}>`,
-      to: "loogsoftware@gmail.com",
-      subject: 'Código de verificação – Giuseppe Vidal',
-      html: `
+    try {
+      await this.resend.emails.send({
+        from: 'Giuseppe Vidal <onboarding@resend.dev>',
+        to: "loogsoftware@gmail.com",
+        subject: 'Código de verificação – Giuseppe Vidal',
+        html: `
   <div style="
     font-family: Arial, Helvetica, sans-serif;
     background-color: #f5f6f8;
@@ -89,10 +82,7 @@ export class EmailService {
     </div>
   </div>
 `,
-    };
-
-    try {
-      await this.transporter.sendMail(mailOptions);
+      });
       this.logger.log('sendVerificationCode:success');
     } catch (err) {
       this.logger.error('sendVerificationCode:error', JSON.stringify(err));

@@ -32,7 +32,6 @@ export class ProductsService {
     private readonly imageService: ImageService,
   ) {}
 
-  // CREATE PRODUCT
   async create(dto: ProductRequestDto, files?: Express.Multer.File[]) {
     this.logger.log(`create:start ${toLogString({ dto })}`);
 
@@ -49,7 +48,6 @@ export class ProductsService {
 
       const { variations, supplierId, ...dtoWithoutVariations } = dto;
 
-      // UPLOAD IMAGENS CLOUDINARY
       const images = await this.imageService.createImages(files ?? []);
 
       const product = this.repo.create({
@@ -93,7 +91,6 @@ export class ProductsService {
     }
   }
 
-  // FIND ALL
   async findAll() {
     return await this.repo.find({
       relations: {
@@ -108,7 +105,6 @@ export class ProductsService {
     });
   }
 
-  // FIND ONE
   async findOne(id: string) {
     const product = await this.repo.findOne({
       where: { id },
@@ -125,7 +121,6 @@ export class ProductsService {
     return product;
   }
 
-  // UPDATE
   async update(
     id: string,
     dto: UpdateProductRequestDto,
@@ -133,14 +128,30 @@ export class ProductsService {
   ) {
     const product = await this.findOne(id);
 
+    if (dto.imageIds !== undefined) {
+      const currentImageIds = product.images.map((img) => img.id);
+      const imageIdsToKeep = dto.imageIds || [];
+      const imageIdsToDelete = currentImageIds.filter(
+        (imgId) => !imageIdsToKeep.includes(imgId),
+      );
+
+      if (imageIdsToDelete.length > 0) {
+        await this.imageService.deleteImages(imageIdsToDelete);
+        product.images = product.images.filter(
+          (img) => !imageIdsToDelete.includes(img.id),
+        );
+      }
+    }
+
     if (files && files.length > 0) {
       const newImages = await this.imageService.createImages(files);
-
       product.images = [...product.images, ...newImages];
     }
 
+    const { imageIds, ...updateData } = dto;
+
     Object.assign(product, {
-      ...dto,
+      ...updateData,
 
       price: dto.price?.toString(),
 
@@ -150,7 +161,6 @@ export class ProductsService {
     return await this.repo.save(product);
   }
 
-  // DELETE
   async remove(id: string) {
     const product = await this.findOne(id);
 

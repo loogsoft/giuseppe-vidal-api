@@ -26,9 +26,8 @@ import { ProductsService } from 'src/services/products.service';
 export class ProductsController {
   constructor(private readonly productsService: ProductsService) {}
 
-  // CREATE PRODUCT
   @Post()
-  @UseInterceptors(FilesInterceptor('images', 10))
+  @UseInterceptors(FilesInterceptor('files', 10))
   async create(
     @Body() dto: ProductRequestDto,
 
@@ -39,7 +38,6 @@ export class ProductsController {
     return plainToInstance(ProductResponseDto, product);
   }
 
-  // GET ALL
   @Get()
   async findAll() {
     const products = await this.productsService.findAll();
@@ -47,7 +45,6 @@ export class ProductsController {
     return plainToInstance(ProductResponseDto, products);
   }
 
-  // GET ONE
   @Get(':id')
   async findOne(@Param('id') id: string) {
     const product = await this.productsService.findOne(id);
@@ -55,22 +52,17 @@ export class ProductsController {
     return plainToInstance(ProductResponseDto, product);
   }
 
-  // UPDATE
   @Patch(':id')
-  @UseInterceptors(FilesInterceptor('images', 10))
+  @UseInterceptors(FilesInterceptor('files', 10))
   async update(
     @Param('id') id: string,
-
     @Body() dto: UpdateProductRequestDto,
-
     @UploadedFiles() files: Express.Multer.File[],
   ) {
     const product = await this.productsService.update(id, dto, files);
-
     return plainToInstance(ProductResponseDto, product);
   }
 
-  // DELETE
   @Delete(':id')
   async remove(@Param('id') id: string) {
     return this.productsService.remove(id);
