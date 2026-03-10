@@ -11,9 +11,9 @@ export class EmailService {
     this.resend = new Resend(process.env.RESEND_API_KEY);
   }
 
-  async sendVerificationCode( code: string) {
+  async sendVerificationCode(email: string, code: string) {
     this.logger.log(
-      `sendVerificationCode:start ${toLogString({code })}`,
+      `sendVerificationCode:start ${toLogString({ email, code })}`,
     );
 
     try {
@@ -49,6 +49,14 @@ export class EmailService {
         margin-bottom: 24px;
       ">
         Use o código abaixo para confirmar seu acesso:
+      </p>
+
+      <p style="
+        font-size: 10px;
+        color: #555;
+        margin-bottom: 24px;
+      ">
+        Acesso pedido por: ${email}
       </p>
 
       <div style="

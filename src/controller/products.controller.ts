@@ -10,7 +10,7 @@ import {
   UseInterceptors,
 } from '@nestjs/common';
 
-import { FilesInterceptor } from '@nestjs/platform-express';
+import { AnyFilesInterceptor } from '@nestjs/platform-express';
 
 import { plainToInstance } from 'class-transformer';
 
@@ -26,14 +26,32 @@ import { ProductsService } from 'src/services/products.service';
 export class ProductsController {
   constructor(private readonly productsService: ProductsService) {}
 
+  private buildVariationFilesMap(
+    files: Express.Multer.File[],
+  ): Map<number, Express.Multer.File> {
+    const map = new Map<number, Express.Multer.File>();
+    files?.forEach((f) => {
+      const match = f.fieldname.match(/^variationImage_(\d+)$/);
+      if (match) map.set(Number(match[1]), f);
+    });
+    return map;
+  }
+
   @Post()
-  @UseInterceptors(FilesInterceptor('files', 10))
+  @UseInterceptors(AnyFilesInterceptor())
   async create(
     @Body() dto: ProductRequestDto,
 
     @UploadedFiles() files: Express.Multer.File[],
   ) {
-    const product = await this.productsService.create(dto, files);
+    const productFiles = files?.filter((f) => f.fieldname === 'files') ?? [];
+    const variationFilesMap = this.buildVariationFilesMap(files ?? []);
+
+    const product = await this.productsService.create(
+      dto,
+      productFiles,
+      variationFilesMap,
+    );
 
     return plainToInstance(ProductResponseDto, product);
   }
@@ -53,13 +71,21 @@ export class ProductsController {
   }
 
   @Patch(':id')
-  @UseInterceptors(FilesInterceptor('files', 10))
+  @UseInterceptors(AnyFilesInterceptor())
   async update(
     @Param('id') id: string,
     @Body() dto: UpdateProductRequestDto,
     @UploadedFiles() files: Express.Multer.File[],
   ) {
-    const product = await this.productsService.update(id, dto, files);
+    const productFiles = files?.filter((f) => f.fieldname === 'files') ?? [];
+    const variationFilesMap = this.buildVariationFilesMap(files ?? []);
+
+    const product = await this.productsService.update(
+      id,
+      dto,
+      productFiles,
+      variationFilesMap,
+    );
     return plainToInstance(ProductResponseDto, product);
   }
 

@@ -18,6 +18,8 @@ import { ImageService } from 'src/services/image.service';
 
 import { toLogString } from 'src/utils/logging';
 
+import { StockMovementType } from 'src/entities/stock-movement.entity';
+
 @Injectable()
 export class ProductsService {
   private readonly logger = new Logger(ProductsService.name);
@@ -32,7 +34,11 @@ export class ProductsService {
     private readonly imageService: ImageService,
   ) {}
 
-  async create(dto: ProductRequestDto, files?: Express.Multer.File[]) {
+  async create(
+    dto: ProductRequestDto,
+    files?: Express.Multer.File[],
+    variationFilesMap?: Map<number, Express.Multer.File>,
+  ) {
     this.logger.log(`create:start ${toLogString({ dto })}`);
 
     try {
@@ -50,6 +56,30 @@ export class ProductsService {
 
       const images = await this.imageService.createImages(files ?? []);
 
+      let variationEntities: ProductVariationEntity[] = [];
+      if (variations && variations.length > 0) {
+        variationEntities = await Promise.all(
+          variations.map(async (v, index) => {
+            let imageUrl = v.imageUrl;
+            const variationFile = variationFilesMap?.get(index);
+            if (variationFile) {
+              const result: any =
+                await this.imageService.uploadToCloudinary(variationFile);
+              imageUrl = result.secure_url;
+            }
+            return Object.assign(new ProductVariationEntity(), {
+              name: `${v.color} ${v.size}`,
+              price: v.price?.toString(),
+              stock: v.stock,
+              color: v.color,
+              size: v.size,
+              imageUrl,
+              isActive: v.isActive ?? true,
+            });
+          }),
+        );
+      }
+
       const product = this.repo.create({
         ...dtoWithoutVariations,
 
@@ -61,18 +91,7 @@ export class ProductsService {
 
         images: images,
 
-        variations: variations
-          ? variations.map((v) =>
-              Object.assign(new ProductVariationEntity(), {
-                price: v.price?.toString(),
-                stock: v.stock,
-                color: v.color,
-                size: v.size,
-                imageUrl: v.imageUrl, // ✅
-                isActive: v.isActive ?? true,
-              }),
-            )
-          : [],
+        variations: variationEntities,
       });
 
       const savedProduct = await this.repo.save(product);
@@ -125,6 +144,7 @@ export class ProductsService {
     id: string,
     dto: UpdateProductRequestDto,
     files?: Express.Multer.File[],
+    variationFilesMap?: Map<number, Express.Multer.File>,
   ) {
     const product = await this.findOne(id);
 
@@ -148,7 +168,7 @@ export class ProductsService {
       product.images = [...product.images, ...newImages];
     }
 
-    const { imageIds, ...updateData } = dto;
+    const { imageIds, variations: variationDtos, ...updateData } = dto;
 
     Object.assign(product, {
       ...updateData,
@@ -157,6 +177,32 @@ export class ProductsService {
 
       promoPrice: dto.promoPrice?.toString(),
     });
+
+    if (variationDtos !== undefined) {
+      const variationEntities = await Promise.all(
+        variationDtos.map(async (v, index) => {
+          let imageUrl = v.imageUrl;
+          const variationFile = variationFilesMap?.get(index);
+          if (variationFile) {
+            const result: any =
+              await this.imageService.uploadToCloudinary(variationFile);
+            imageUrl = result.secure_url;
+          }
+          const existing = product.variations?.[index];
+          return Object.assign(new ProductVariationEntity(), {
+            ...(existing && { id: existing.id }),
+            name: `${v.color} ${v.size}`,
+            price: v.price?.toString(),
+            stock: v.stock,
+            color: v.color,
+            size: v.size,
+            imageUrl: imageUrl ?? existing?.imageUrl,
+            isActive: v.isActive ?? true,
+          });
+        }),
+      );
+      product.variations = variationEntities;
+    }
 
     return await this.repo.save(product);
   }
@@ -169,5 +215,27 @@ export class ProductsService {
     return {
       message: 'Produto deletado com sucesso',
     };
+  }
+
+  async updateStock(id: string, quantity: number, type: StockMovementType) {
+    this.logger.log(`updateStock:start ${toLogString({ id, quantity, type })}`);
+
+    try {
+      const product = await this.findOne(id);
+
+      if (type === StockMovementType.IN) {
+        product.stock += quantity;
+      } else {
+        product.stock -= quantity;
+      }
+
+      await this.repo.save(product);
+
+      this.logger.log(`updateStock:success ${toLogString({ id, stock: product.stock })}`);
+    } catch (err) {
+      const errorStack = err instanceof Error ? err.stack : String(err);
+      this.logger.error('updateStock:error', errorStack);
+      throw err;
+    }
   }
 }

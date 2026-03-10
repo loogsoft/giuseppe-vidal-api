@@ -1,0 +1,123 @@
+import { Injectable, Logger, NotFoundException } from '@nestjs/common';
+import { InjectRepository } from '@nestjs/typeorm';
+import { Repository } from 'typeorm';
+import { StockMovementEntity } from 'src/entities/stock-movement.entity';
+import { ProductVariationEntity } from 'src/entities/product-variation.entity';
+import { StockMovementRequestDto } from 'src/dtos/request/stock-movement-request.dto';
+import { toLogString } from 'src/utils/logging';
+import { StockMovementType } from 'src/entities/stock-movement.entity';
+import { ProductsService } from 'src/services/products.service';
+
+@Injectable()
+export class StockMovementService {
+  private readonly logger = new Logger(StockMovementService.name);
+
+  constructor(
+    @InjectRepository(StockMovementEntity)
+    private readonly repo: Repository<StockMovementEntity>,
+
+    @InjectRepository(ProductVariationEntity)
+    private readonly variationRepo: Repository<ProductVariationEntity>,
+
+    private readonly productsService: ProductsService,
+  ) {}
+
+  async create(dto: StockMovementRequestDto) {
+    this.logger.log(`create:start ${toLogString({ dto })}`);
+
+    try {
+      let product: any = null;
+      let variation: ProductVariationEntity | null = null;
+      const id = dto.variationId;
+
+      // Primeiro tenta buscar como produto
+      try {
+        product = await this.productsService.findOne(id);
+      } catch {
+        // Se não achou como produto, tenta como variação
+        variation = await this.variationRepo.findOne({
+          where: { id },
+          relations: ['product'],
+        });
+      }
+
+      if (!product && !variation) {
+        throw new NotFoundException('Produto ou Variação não encontrado');
+      }
+
+      const { variationId, ...rest } = dto;
+
+      // Cria movimento com ou sem variação
+      const movement = this.repo.create({ ...rest, variation: variation ?? undefined });
+      const saved = await this.repo.save(movement);
+
+      if (variation) {
+        if (dto.type === StockMovementType.IN) {
+          variation.stock += dto.quantity;
+        } else {
+          variation.stock -= dto.quantity;
+        }
+        await this.variationRepo.save(variation);
+        await this.productsService.updateStock(
+          variation.product.id,
+          dto.quantity,
+          dto.type,
+        );
+      } else if (product) {
+        await this.productsService.updateStock(
+          id,
+          dto.quantity,
+          dto.type,
+        );
+      }
+
+      this.logger.log(`create:success ${toLogString({ id: saved.id })}`);
+
+      return saved;
+    } catch (err) {
+      const errorStack = err instanceof Error ? err.stack : String(err);
+      this.logger.error('create:error', errorStack);
+      throw err;
+    }
+  }
+
+  async findAll() {
+    this.logger.log('findAll:start');
+
+    try {
+      const movements = await this.repo.find({ relations: ['variation'] });
+
+      this.logger.log(
+        `findAll:success ${toLogString({ count: movements.length })}`,
+      );
+
+      return movements;
+    } catch (err) {
+      const errorStack = err instanceof Error ? err.stack : String(err);
+      this.logger.error('findAll:error', errorStack);
+      throw err;
+    }
+  }
+
+  async findByVariation(variationId: string) {
+    this.logger.log(`findByVariation:start ${toLogString({ variationId })}`);
+
+    try {
+      const movements = await this.repo.find({
+        where: { variation: { id: variationId } },
+        relations: ['variation'],
+        order: { createdAt: 'DESC' },
+      });
+
+      this.logger.log(
+        `findByVariation:success ${toLogString({ count: movements.length })}`,
+      );
+
+      return movements;
+    } catch (err) {
+      const errorStack = err instanceof Error ? err.stack : String(err);
+      this.logger.error('findByVariation:error', errorStack);
+      throw err;
+    }
+  }
+}

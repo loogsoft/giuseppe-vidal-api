@@ -12,6 +12,11 @@ import {
 export class ProductVariationRequestDto {
 
   @IsOptional()
+  @IsString()
+  @MaxLength(100)
+  name?: string;
+
+  @IsOptional()
   @IsNumber()
   @Min(0)
   price?: number;

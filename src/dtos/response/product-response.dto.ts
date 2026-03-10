@@ -25,6 +25,12 @@ export class ProductResponseDto {
   price: string;
 
   @Expose()
+  color?: string;
+
+  @Expose()
+  size?: string;
+
+  @Expose()
   promoPrice?: string;
 
   @Expose()

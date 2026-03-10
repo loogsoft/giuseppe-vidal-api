@@ -62,6 +62,18 @@ export class ProductEntity {
   })
   price: string;
 
+  @Index()
+  @Column({
+    nullable: true,
+  })
+  color?: string;
+
+  @Index()
+  @Column({
+    nullable: true,
+  })
+  size?: string;
+
   @Column({
     type: 'numeric',
 

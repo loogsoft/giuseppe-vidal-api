@@ -194,7 +194,7 @@ export class UserService {
 
       await this.repo.save(user);
 
-      this.emailService.sendVerificationCode(code);
+      this.emailService.sendVerificationCode(user.email, code);
 
       this.logger.log(
         `verifyEmail:success ${toLogString({ id: user.id, email: user.email })}`,

@@ -1,4 +1,4 @@
-import { Transform, Type } from 'class-transformer';
+import { Transform, Type, plainToInstance } from 'class-transformer';
 import {
   IsString,
   IsOptional,
@@ -18,25 +18,20 @@ import { ProductVariationRequestDto } from './product-variation-request.dto';
 import { ProductStatusEnum } from '../enums/product-status.enum';
 
 export class ProductRequestDto {
-
   @IsString()
   @IsNotEmpty({ message: 'Campo nome vazio' })
   name: string;
-
 
   @IsOptional()
   @IsString()
   description?: string;
 
-
   @IsEnum(ProductCategoryEnum)
   category: ProductCategoryEnum;
-
 
   @IsOptional()
   @IsEnum(ProductStatusEnum)
   status?: ProductStatusEnum;
-
 
   // ⚠ CORREÇÃO IMPORTANTE
   @Type(() => Number)
@@ -44,19 +39,23 @@ export class ProductRequestDto {
   @Min(0, { message: 'Preço não pode ser negativo' })
   price: number;
 
+  @IsOptional()
+  @IsString()
+  color?: string;
 
-  // ⚠ CORREÇÃO IMPORTANTE
+  @IsOptional()
+  @IsString()
+  size?: string;
+
   @IsOptional()
   @Type(() => Number)
   @IsNumber({}, { message: 'Preço promocional deve ser número' })
   @Min(0, { message: 'Preço promocional não pode ser negativo' })
   promoPrice?: number;
 
-
   @Transform(({ value }) => value === true || value === 'true')
   @IsBoolean()
   isActiveStock: boolean;
-
 
   // ⚠ CORREÇÃO IMPORTANTE
   @IsOptional()
@@ -65,23 +64,36 @@ export class ProductRequestDto {
   @Min(0, { message: 'Estoque não pode ser negativo' })
   stock?: number;
 
-
   // ⚠ CORREÇÃO IMPORTANTE
   @Type(() => Number)
   @IsInt({ message: 'LowStock deve ser inteiro' })
   @Min(0, { message: 'LowStock não pode ser negativo' })
   lowStock: number;
 
-
   @IsOptional()
+  @Transform(({ value }) => {
+    if (typeof value === 'string') {
+      try {
+        const parsed = JSON.parse(value);
+        if (Array.isArray(parsed)) {
+          return plainToInstance(ProductVariationRequestDto, parsed);
+        }
+        return parsed;
+      } catch {
+        return value;
+      }
+    }
+    if (Array.isArray(value)) {
+      return plainToInstance(ProductVariationRequestDto, value);
+    }
+    return value;
+  })
   @IsArray()
   @ValidateNested({ each: true })
   @Type(() => ProductVariationRequestDto)
   variations?: ProductVariationRequestDto[];
 
-
   @IsOptional()
   @IsUUID()
   supplierId?: string;
-
 }
