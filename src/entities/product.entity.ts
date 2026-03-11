@@ -59,8 +59,9 @@ export class ProductEntity {
     precision: 12,
 
     scale: 2,
+    nullable: true,
   })
-  price: string;
+  price?: string;
 
   @Index()
   @Column({
@@ -93,12 +94,12 @@ export class ProductEntity {
   @Column({
     default: 0,
   })
-  stock: number;
+  stock?: number;
 
   @Column({
     default: 0,
   })
-  lowStock: number;
+  lowStock?: number;
 
   @Column({
     nullable: true,
