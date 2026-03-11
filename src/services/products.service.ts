@@ -31,6 +31,9 @@ export class ProductsService {
     @InjectRepository(SupplierEntity)
     private readonly supplierRepo: Repository<SupplierEntity>,
 
+    @InjectRepository(ProductVariationEntity)
+    private readonly variationRepo: Repository<ProductVariationEntity>,
+
     private readonly imageService: ImageService,
   ) {}
 
@@ -179,8 +182,35 @@ export class ProductsService {
     });
 
     if (variationDtos !== undefined) {
+      const existingVariations = product.variations ?? [];
+
+      const newKeys = new Set(variationDtos.map((v) => `${v.color}|${v.size}`));
+      const variationsToDelete = existingVariations.filter(
+        (v) => !newKeys.has(`${v.color}|${v.size}`),
+      );
+
+      if (variationsToDelete.length > 0) {
+        for (const variation of variationsToDelete) {
+          const movementCount = await this.variationRepo.manager
+            .createQueryBuilder()
+            .select('COUNT(*)', 'count')
+            .from('stock_movements', 'sm')
+            .where('sm."variationId" = :id', { id: variation.id })
+            .getRawOne();
+
+          if (Number(movementCount?.count) > 0) {
+            await this.variationRepo.update(variation.id, { isActive: false });
+          } else {
+            await this.variationRepo.remove(variation);
+          }
+        }
+      }
+
       const variationEntities = await Promise.all(
         variationDtos.map(async (v, index) => {
+          const existing = existingVariations.find(
+            (e) => e.color === v.color && e.size === v.size,
+          );
           let imageUrl = v.imageUrl;
           const variationFile = variationFilesMap?.get(index);
           if (variationFile) {
@@ -188,7 +218,6 @@ export class ProductsService {
               await this.imageService.uploadToCloudinary(variationFile);
             imageUrl = result.secure_url;
           }
-          const existing = product.variations?.[index];
           return Object.assign(new ProductVariationEntity(), {
             ...(existing && { id: existing.id }),
             name: `${v.color} ${v.size}`,
