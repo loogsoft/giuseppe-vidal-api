@@ -19,6 +19,10 @@ export class StockMovementRequestDto {
   @Min(1)
   quantity: number;
 
+  @IsString()
+  @IsNotEmpty()
+  productName: string;
+
   @IsEnum(StockMovementType)
   type: StockMovementType;
 

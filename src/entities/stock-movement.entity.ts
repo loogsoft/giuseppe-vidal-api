@@ -23,6 +23,9 @@ export class StockMovementEntity {
   @Column()
   quantity: number;
 
+  @Column({ nullable: true })
+  productName: string;
+
   @Column({
     type: 'enum',
     enum: StockMovementType,

@@ -29,12 +29,11 @@ export class StockMovementService {
       let product: any = null;
       let variation: ProductVariationEntity | null = null;
       const id = dto.variationId;
+      const productName = dto.productName;
 
-      // Primeiro tenta buscar como produto
       try {
         product = await this.productsService.findOne(id);
       } catch {
-        // Se não achou como produto, tenta como variação
         variation = await this.variationRepo.findOne({
           where: { id },
           relations: ['product'],
@@ -45,10 +44,9 @@ export class StockMovementService {
         throw new NotFoundException('Produto ou Variação não encontrado');
       }
 
-      const { variationId, ...rest } = dto;
+      const { variationId, productName: _productName, ...rest } = dto;
 
-      // Cria movimento com ou sem variação
-      const movement = this.repo.create({ ...rest, variation: variation ?? undefined });
+      const movement = this.repo.create({ ...rest, variation: variation ?? undefined, productName });
       const saved = await this.repo.save(movement);
 
       if (variation) {
