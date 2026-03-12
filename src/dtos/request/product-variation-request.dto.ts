@@ -21,26 +21,26 @@ export class ProductVariationRequestDto {
   @Min(0)
   price?: number;
 
-
   @IsInt()
   @Min(0)
   stock: number;
 
+  @IsInt()
+  @Min(0)
+  @IsOptional()
+  lowStock?: number;
 
   @IsOptional()
   @IsBoolean()
   isActive?: boolean;
 
-
   @IsString()
   @MaxLength(50)
   color: string;
 
-
   @IsString()
   @MaxLength(50)
   size: string;
-
 
   @IsOptional()
   @IsString()

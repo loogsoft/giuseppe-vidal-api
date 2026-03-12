@@ -78,6 +78,7 @@ export class ProductsService {
               size: v.size,
               imageUrl,
               isActive: v.isActive ?? true,
+              lowStock: v.lowStock,
             });
           }),
         );
@@ -227,6 +228,7 @@ export class ProductsService {
             size: v.size,
             imageUrl: imageUrl ?? existing?.imageUrl,
             isActive: v.isActive ?? true,
+            lowStock: v.lowStock,
           });
         }),
       );
@@ -251,7 +253,7 @@ export class ProductsService {
 
     try {
       const product = await this.findOne(id);
-
+      if (product.stock)
       if (type === StockMovementType.IN) {
         product.stock += quantity;
       } else {
@@ -260,7 +262,9 @@ export class ProductsService {
 
       await this.repo.save(product);
 
-      this.logger.log(`updateStock:success ${toLogString({ id, stock: product.stock })}`);
+      this.logger.log(
+        `updateStock:success ${toLogString({ id, stock: product.stock })}`,
+      );
     } catch (err) {
       const errorStack = err instanceof Error ? err.stack : String(err);
       this.logger.error('updateStock:error', errorStack);

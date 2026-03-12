@@ -23,6 +23,9 @@ export class StockMovementResponseDto {
   reason: string;
 
   @Expose()
+  price: string;
+
+  @Expose()
   paymentMethod: string;
 
   @Expose()

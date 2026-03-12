@@ -11,7 +11,7 @@ import {
 import { ProductEntity } from './product.entity';
 
 @Entity('product_variations')
-@Index(['product', 'color', 'size'], { unique: true }) // evita duplicação
+@Index(['product', 'color', 'size'], { unique: true })
 export class ProductVariationEntity {
   @PrimaryGeneratedColumn('uuid')
   id: string;
@@ -24,6 +24,9 @@ export class ProductVariationEntity {
 
   @Column({ default: 0 })
   stock: number;
+
+  @Column({ nullable: true, default: 0 })
+  lowStock?: number;
 
   @Column({ default: true })
   isActive: boolean;

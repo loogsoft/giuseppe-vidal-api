@@ -11,8 +11,8 @@ export class MessageEntity {
   @Column({ nullable: false })
   name: string;
 
-  @Column({ nullable: false })
-  url: string;
+  @Column({ nullable: true })
+  url?: string;
 
   @Column({ nullable: false })
   description: string;

@@ -1,4 +1,4 @@
-import { IsString, IsNotEmpty } from 'class-validator';
+import { IsString, IsNotEmpty, IsOptional } from 'class-validator';
 
 export class MessageRequestDto {
   @IsString()
@@ -10,8 +10,8 @@ export class MessageRequestDto {
   name: string;
 
   @IsString()
-  @IsNotEmpty()
-  url: string;
+  @IsOptional()
+  url?: string;
 
   @IsString()
   @IsNotEmpty()

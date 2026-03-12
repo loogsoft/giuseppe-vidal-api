@@ -35,6 +35,9 @@ export class StockMovementEntity {
   @Column()
   reason: string;
 
+  @Column({nullable:true})
+  price: string;
+
   @Column({ nullable: false })
   paymentMethod: string;
 

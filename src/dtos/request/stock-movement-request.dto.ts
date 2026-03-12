@@ -32,6 +32,10 @@ export class StockMovementRequestDto {
 
   @IsString()
   @IsNotEmpty()
+  price: string;
+
+  @IsString()
+  @IsNotEmpty()
   paymentMethod: string;
 
   @IsString()
