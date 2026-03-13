@@ -15,9 +15,8 @@ import { MessageModule } from './modules/message.module';
   imports: [
     ConfigModule.forRoot({
       isGlobal: true,
-      envFilePath: '.env.development',
+      envFilePath: ['.env.development', '.env'],
     }),
-
     TypeOrmModule.forRootAsync({
       imports: [ConfigModule],
       inject: [ConfigService],
@@ -30,7 +29,7 @@ import { MessageModule } from './modules/message.module';
     HealthModule,
     UploadModule,
     StockMovementModule,
-    MessageModule
+    MessageModule,
   ],
 })
 export class AppModule {}
