@@ -17,7 +17,7 @@ export class StockMovementEntity {
   @PrimaryGeneratedColumn('uuid')
   id: string;
 
-  @ManyToOne(() => ProductVariationEntity)
+  @ManyToOne(() => ProductVariationEntity, { onDelete: 'CASCADE' })
   variation: ProductVariationEntity;
 
   @Column()

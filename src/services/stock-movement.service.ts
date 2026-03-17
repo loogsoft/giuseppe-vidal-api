@@ -50,12 +50,14 @@ export class StockMovementService {
       const saved = await this.repo.save(movement);
 
       if (variation) {
-        if (dto.type === StockMovementType.IN) {
-          variation.stock += dto.quantity;
-        } else {
-          variation.stock -= dto.quantity;
+        if (typeof variation.stock === 'number') {
+          if (dto.type === StockMovementType.IN) {
+            variation.stock += dto.quantity;
+          } else {
+            variation.stock -= dto.quantity;
+          }
+          await this.variationRepo.save(variation);
         }
-        await this.variationRepo.save(variation);
         await this.productsService.updateStock(
           variation.product.id,
           dto.quantity,

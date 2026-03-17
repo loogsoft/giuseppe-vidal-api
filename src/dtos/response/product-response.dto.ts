@@ -22,22 +22,22 @@ export class ProductResponseDto {
   status: ProductStatusEnum;
 
   @Expose()
-  price: string;
+  price: string | null;
 
   @Expose()
-  color?: string;
+  color?: string | null;
 
   @Expose()
-  size?: string;
+  size?: string | null;
 
   @Expose()
-  promoPrice?: string;
+  promoPrice?: string | null;
 
   @Expose()
-  isActiveStock: boolean;
+  activeLowStock?: boolean;
 
   @Expose()
-  stock: number;
+  stock: number | null;
 
   @Expose()
   lowStock: number;

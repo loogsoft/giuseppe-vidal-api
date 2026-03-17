@@ -6,29 +6,31 @@ export class ProductVariationResponseDto {
   id: string;
 
   @Expose()
-  name: string;
+  name: string | null;
 
   @Expose()
-  price?: string;
+  price?: string | null ;
 
   @Expose()
-  stock: number;
+  stock?: number | null;
 
   @Expose()
-  lowStock: number;
+  lowStock?: number | null;
 
+  @Expose()
+  activeLowStock?: boolean;
 
   @Expose()
   isActive: boolean;
 
   @Expose()
-  color: string;
+  color?: string | null;
 
   @Expose()
-  size: string;
+  size?: string | null;
 
   @Expose()
-  imageUrl?: string;
+  imageUrl?: string | null;
 
   @Expose()
   createdAt: Date;

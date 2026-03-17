@@ -25,6 +25,10 @@ export class ProductVariationRequestDto {
   @Min(0)
   stock: number;
 
+  @IsOptional()
+  @IsBoolean()
+  activeLowStock?: boolean;
+
   @IsInt()
   @Min(0)
   @IsOptional()

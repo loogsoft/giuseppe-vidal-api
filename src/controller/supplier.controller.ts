@@ -1,4 +1,17 @@
-import { Controller, Post, Body, Get, Param, Delete } from '@nestjs/common';
+import {
+  Controller,
+  Post,
+  Body,
+  Get,
+  Param,
+  Delete,
+  Patch,
+  UploadedFiles,
+  UseInterceptors,
+} from '@nestjs/common';
+
+import { AnyFilesInterceptor } from '@nestjs/platform-express';
+
 import { SupplierRequestDto } from 'src/dtos/request/supplier-request.dto';
 import { SuppliersService } from 'src/services/supplier.service';
 
@@ -7,8 +20,21 @@ export class SuppliersController {
   constructor(private readonly service: SuppliersService) {}
 
   @Post()
-  create(@Body() dto: SupplierRequestDto) {
-    return this.service.create(dto);
+  @UseInterceptors(AnyFilesInterceptor())
+  create(
+    @Body() dto: SupplierRequestDto,
+    @UploadedFiles() files: Express.Multer.File[],
+  ) {
+    return this.service.create(dto, files);
+  }
+  @Patch(':id')
+  @UseInterceptors(AnyFilesInterceptor())
+  update(
+    @Param('id') id: string,
+    @Body() dto: SupplierRequestDto,
+    @UploadedFiles() files: Express.Multer.File[],
+  ) {
+    return this.service.update(id, dto, files);
   }
 
   @Get()

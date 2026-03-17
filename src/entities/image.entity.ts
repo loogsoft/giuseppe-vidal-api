@@ -6,6 +6,7 @@ import {
 } from 'typeorm';
 
 import { ProductEntity } from './product.entity';
+import { SupplierEntity } from './supplier.entity';
 
 @Entity('images')
 export class ImageEntity {
@@ -28,5 +29,12 @@ export class ImageEntity {
     { onDelete: 'CASCADE' },
   )
   product: ProductEntity;
+
+  @ManyToOne(
+    () => SupplierEntity,
+    supplier => supplier.images,
+    { onDelete: 'CASCADE' },
+  )
+  supplier: SupplierEntity;
 
 }

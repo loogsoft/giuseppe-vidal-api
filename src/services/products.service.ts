@@ -78,7 +78,7 @@ export class ProductsService {
               size: v.size,
               imageUrl,
               isActive: v.isActive ?? true,
-              lowStock: v.lowStock,
+              activeLowStock: v.activeLowStock,
             });
           }),
         );
@@ -86,16 +86,13 @@ export class ProductsService {
 
       const product = this.repo.create({
         ...dtoWithoutVariations,
-
-        price: dto.price.toString(),
-
-        promoPrice: dto.promoPrice?.toString(),
-
+        price: dto.price,
+        promoPrice: dto.promoPrice,
         supplier: supplier ?? undefined,
-
         images: images,
-
         variations: variationEntities,
+        color: dto.color ?? undefined,
+        size: dto.size ?? undefined,
       });
 
       const savedProduct = await this.repo.save(product);
@@ -176,10 +173,10 @@ export class ProductsService {
 
     Object.assign(product, {
       ...updateData,
-
       price: dto.price?.toString(),
-
       promoPrice: dto.promoPrice?.toString(),
+      color: dto.color ?? undefined,
+      size: dto.size ?? undefined,
     });
 
     if (variationDtos !== undefined) {
@@ -228,7 +225,7 @@ export class ProductsService {
             size: v.size,
             imageUrl: imageUrl ?? existing?.imageUrl,
             isActive: v.isActive ?? true,
-            lowStock: v.lowStock,
+            activeLowStock: v.activeLowStock,
           });
         }),
       );
@@ -253,18 +250,19 @@ export class ProductsService {
 
     try {
       const product = await this.findOne(id);
-      if (product.stock)
-      if (type === StockMovementType.IN) {
-        product.stock += quantity;
+      if (typeof product.stock === 'number') {
+        if (type === StockMovementType.IN) {
+          product.stock += quantity;
+        } else {
+          product.stock -= quantity;
+        }
+        await this.repo.save(product);
+        this.logger.log(
+          `updateStock:success ${toLogString({ id, stock: product.stock })}`,
+        );
       } else {
-        product.stock -= quantity;
+        throw new Error('Estoque do produto não está definido');
       }
-
-      await this.repo.save(product);
-
-      this.logger.log(
-        `updateStock:success ${toLogString({ id, stock: product.stock })}`,
-      );
     } catch (err) {
       const errorStack = err instanceof Error ? err.stack : String(err);
       this.logger.error('updateStock:error', errorStack);

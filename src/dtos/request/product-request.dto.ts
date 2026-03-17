@@ -37,32 +37,32 @@ export class ProductRequestDto {
   @Type(() => Number)
   @IsNumber({}, { message: 'Preço deve ser número' })
   @Min(0, { message: 'Preço não pode ser negativo' })
-  price: number;
+  price: number | null;
 
   @IsOptional()
   @IsString()
-  color?: string;
+  color?: string | null;
 
   @IsOptional()
   @IsString()
-  size?: string;
+  size?: string | null;
 
   @IsOptional()
   @Type(() => Number)
   @IsNumber({}, { message: 'Preço promocional deve ser número' })
   @Min(0, { message: 'Preço promocional não pode ser negativo' })
-  promoPrice?: number;
+  promoPrice?: number | null;
 
   @Transform(({ value }) => value === true || value === 'true')
   @IsBoolean()
-  isActiveStock: boolean;
+  activeLowStock?: boolean;
 
   // ⚠ CORREÇÃO IMPORTANTE
   @IsOptional()
   @Type(() => Number)
   @IsInt({ message: 'Estoque deve ser inteiro' })
   @Min(0, { message: 'Estoque não pode ser negativo' })
-  stock?: number;
+  stock?: number | null;
 
   // ⚠ CORREÇÃO IMPORTANTE
   @Type(() => Number)

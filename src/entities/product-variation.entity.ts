@@ -20,24 +20,25 @@ export class ProductVariationEntity {
   name: string;
 
   @Column({ type: 'numeric', precision: 12, scale: 2, nullable: true })
-  price?: string;
+  price?: number | null;
 
-  @Column({ default: 0 })
-  stock: number;
+  @Column({ type: 'boolean', nullable: true, default: false })
+  activeLowStock?: boolean;
 
-  @Column({ nullable: true, default: 0 })
-  lowStock?: number;
+  @Column({ type: 'int', nullable: true })
+  stock?: number | null;
 
-  @Column({ default: true })
+  @Column({ type: 'int', nullable: true })
+  lowStock?: number | null;
+
+  @Column({ type: 'boolean', default: true })
   isActive: boolean;
 
-  @Index()
-  @Column()
-  color: string;
+  @Column({ type: 'varchar', nullable: true })
+  color?: string;
 
-  @Index()
-  @Column()
-  size: string;
+  @Column({ nullable: true })
+  size?: string;
 
   @Column({ nullable: true })
   imageUrl?: string;

@@ -79,7 +79,6 @@ export class ProductsController {
   ) {
     const productFiles = files?.filter((f) => f.fieldname === 'files') ?? [];
     const variationFilesMap = this.buildVariationFilesMap(files ?? []);
-
     const product = await this.productsService.update(
       id,
       dto,

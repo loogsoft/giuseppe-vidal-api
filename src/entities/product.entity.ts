@@ -55,97 +55,68 @@ export class ProductEntity {
 
   @Column({
     type: 'numeric',
-
     precision: 12,
-
     scale: 2,
     nullable: true,
   })
-  price?: string;
+  price?: number | null;
+
 
   @Index()
   @Column({
+    type: 'varchar',
     nullable: true,
   })
   color?: string;
 
   @Index()
   @Column({
+    type: 'varchar',
     nullable: true,
   })
   size?: string;
 
   @Column({
     type: 'numeric',
-
     precision: 12,
-
     scale: 2,
-
     nullable: true,
   })
-  promoPrice?: string;
+  promoPrice?: number | null;
 
-  @Column({
-    default: true,
-  })
-  isActiveStock: boolean;
+  @Column({ type: 'boolean', nullable: true, default: false })
+  activeLowStock?: boolean;
 
-  @Column({
-    default: 0,
-  })
-  stock?: number;
+  @Column({ type: 'int', nullable: true, default: null})
+  stock?: number | null;
 
-  @Column({
-    default: 0,
-  })
-  lowStock?: number;
+  @Column({ type: 'int', default: 0 })
+  lowStock: number;
 
   @Column({
     nullable: true,
   })
   coverImage?: string;
 
-  @OneToMany(
-    () => ImageEntity,
-
-    (image) => image.product,
-
-    {
-      cascade: true,
-
-      eager: true,
-    },
-  )
+  @OneToMany(() => ImageEntity, (image) => image.product, {
+    cascade: true,
+    eager: true,
+  })
   images: ImageEntity[];
 
-  @ManyToOne(
-    () => SupplierEntity,
-
-    (supplier) => supplier.products,
-
-    {
-      nullable: true,
-
-      onDelete: 'SET NULL',
-    },
-  )
+  @ManyToOne(() => SupplierEntity, (supplier) => supplier.products, {
+    nullable: true,
+    onDelete: 'SET NULL',
+  })
   @JoinColumn({
     name: 'supplier_id',
   })
   supplier?: SupplierEntity;
 
-  @OneToMany(
-    () => ProductVariationEntity,
-
-    (variation) => variation.product,
-
-    {
-      cascade: true,
-
-      eager: true,
-    },
-  )
+  @OneToMany(() => ProductVariationEntity, (variation) => variation.product, {
+    cascade: true,
+    eager: true,
+  })
   variations: ProductVariationEntity[];
 
   @CreateDateColumn()

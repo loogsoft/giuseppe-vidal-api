@@ -7,18 +7,25 @@ import {
   UpdateDateColumn,
 } from 'typeorm';
 import { ProductEntity } from './product.entity';
+import { ImageEntity } from './image.entity';
 
 @Entity('suppliers')
 export class SupplierEntity {
   @PrimaryGeneratedColumn('uuid')
   id: string;
 
-  @Column({ length: 180 })
+  @Column({ nullable: false })
   name: string;
 
   @Column({ length: 120, nullable: true })
   category?: string;
 
+  @OneToMany(() => ImageEntity, (image) => image.supplier, {
+    cascade: true,
+    eager: true,
+  })
+  images?: ImageEntity[];
+  
   @Column({ nullable: true })
   email?: string;
 

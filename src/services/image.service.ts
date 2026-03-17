@@ -29,15 +29,12 @@ export class ImageService {
 
   async createImages(files: Express.Multer.File[]): Promise<ImageEntity[]> {
     const images: ImageEntity[] = [];
-
     for (const file of files) {
       const uploadResult: any = await this.uploadToCloudinary(file);
-
       const image = this.repo.create({
         url: uploadResult.secure_url,
         publicId: uploadResult.public_id,
       });
-
       images.push(image);
     }
     return images;
